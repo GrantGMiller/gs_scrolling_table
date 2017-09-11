@@ -1,5 +1,5 @@
-ScrollingTable_debug = False
-
+from extronlib.system import Wait
+from extronlib import event
 
 class ScrollingTable():
     # helper class Cell()**************************************************************
@@ -38,7 +38,7 @@ class ScrollingTable():
                 }
 
             def NewHandler(button, state):
-                if ScrollingTable_debug and debug: print(
+                print(
                     'Cell NewHandler(\n button={}\n state={})\nself._btnNewCallbacks={}'.format(button, state, self._btnNewCallbacks))
 
                 # Handle Mutually exclusive cells
@@ -128,7 +128,7 @@ class ScrollingTable():
                 self._update_table()
             except Exception as e:
                 # need this try/except because current Wait class only shows generic "Wait error" message
-                if ScrollingTable_debug and debug: print('Exception in self._update_table()\n', e)
+                print('Exception in self._update_table()\n', e)
 
         self._refresh_Wait = Wait(0.2,
                                   UpdateTable)  # This controls how often the table UI gets updated. 0.2 seconds means the TLP has a  max refresh of 5 times per second.
@@ -261,7 +261,7 @@ class ScrollingTable():
         '''example:
         ScrollingTable.register_data_row({'key1':'value1', 'key2':'value2', ...})
         '''
-        if ScrollingTable_debug and debug: print('ScrollingTable.add_new_row_data(row_dict={})'.format(row_dict))
+        print('ScrollingTable.add_new_row_data(row_dict={})'.format(row_dict))
         self._data_rows.append(row_dict)
 
         for key in row_dict:
@@ -278,7 +278,7 @@ class ScrollingTable():
                 cell.SetState(0)
 
     def clear_all_data(self):
-        if ScrollingTable_debug and debug: print('ScrollingTable.clear_all_data()')
+        print('ScrollingTable.clear_all_data()')
         self._data_rows = []
         self.reset_scroll()
 
@@ -293,7 +293,7 @@ class ScrollingTable():
         replace/append the key/value pairs in that row with the key/values from replace_dict
 
         '''
-        if ScrollingTable_debug and debug: print(
+        print(
             'ScrollingTable.update_row_data(where_dict={}, replace_dict={})'.format(where_dict, replace_dict))
         # Check the data for a row that containts the key/value pair from where_dict
 
@@ -323,13 +323,12 @@ class ScrollingTable():
     #Manipulating the table data************************************************
 
     def has_row(self, where_dict):
-        if ScrollingTable_debug and debug: print('ScrollingTable.has_row(where_dict={})'.format(where_dict))
-        if ScrollingTable_debug and debug:
-            if ScrollingTable_debug and debug: print('self._data_rows=', self._data_rows)
+        print('ScrollingTable.has_row(where_dict={})'.format(where_dict))
+        print('self._data_rows=', self._data_rows)
         # Check the data for a row that containts the key/value pair from where_dict
 
         if len(self._data_rows) == 0:
-            if ScrollingTable_debug and debug: print('ScrollingTable.has_row return False')
+            print('ScrollingTable.has_row return False')
             return False
 
         for row in self._data_rows:
@@ -345,10 +344,10 @@ class ScrollingTable():
                     break
 
             if all_keys_match:
-                if ScrollingTable_debug and debug: print('ScrollingTable.has_row return True')
+                print('ScrollingTable.has_row return True')
                 return True
 
-        if ScrollingTable_debug and debug: print('ScrollingTable.has_row return False')
+        print('ScrollingTable.has_row return False')
         return False
 
     def delete_row(self, where_dict):
@@ -369,7 +368,7 @@ class ScrollingTable():
 
                 if all_keys_match:
                     # all keys match in this row. remove it
-                    if ScrollingTable_debug and debug: print('ScrollingTable.delete_row\nremoving row={}'.format(row))
+                    print('ScrollingTable.delete_row\nremoving row={}'.format(row))
                     self._data_rows.remove(row)
 
         self.IsScrollable()
@@ -397,8 +396,8 @@ class ScrollingTable():
                 self._max_height = cell._row + 1  # self._max_height is height of ui table(not 0 base); 0 means no height
 
     def scroll_up(self):
-        if ScrollingTable_debug and debug: print('ScrollingTable.scroll_up(self={})'.format(self))
-        if ScrollingTable_debug and debug: print('self._current_row_offset=', self._current_row_offset)
+        print('ScrollingTable.scroll_up(self={})'.format(self))
+        print('self._current_row_offset=', self._current_row_offset)
         self._current_row_offset -= 1
         if self._current_row_offset < 0:
             self._current_row_offset = 0
@@ -406,15 +405,15 @@ class ScrollingTable():
         self._update_table()
 
     def scroll_down(self):
-        if ScrollingTable_debug and debug: print('ScrollingTable.scroll_down(self={})'.format(self))
-        if ScrollingTable_debug and debug: print('self._current_row_offset=', self._current_row_offset)
-        if ScrollingTable_debug and debug: print('self._max_height=', self._max_height)
-        if ScrollingTable_debug and debug: print('len(self._data_rows)=', len(self._data_rows))
+        print('ScrollingTable.scroll_down(self={})'.format(self))
+        print('self._current_row_offset=', self._current_row_offset)
+        print('self._max_height=', self._max_height)
+        print('len(self._data_rows)=', len(self._data_rows))
 
         max_offset = len(self._data_rows) - self._max_height  #want to show a blank row when we reach the bottom. This is a visual indicator to the user that there is no more data
         if max_offset < 0:
             max_offset = 0
-        if ScrollingTable_debug and debug: print('max_offset=', max_offset)
+        print('max_offset=', max_offset)
 
         self._current_row_offset += 1
         if self._current_row_offset > max_offset:
@@ -423,7 +422,7 @@ class ScrollingTable():
         self._update_table()
 
     def scroll_left(self):
-        if ScrollingTable_debug and debug: print('ScrollingTable.scroll_left(self={})'.format(self))
+        print('ScrollingTable.scroll_left(self={})'.format(self))
         self._current_col_offset -= 1
         if self._current_col_offset < 0:
             self._current_col_offset = 0
@@ -431,7 +430,7 @@ class ScrollingTable():
         self._update_table()
 
     def scroll_right(self):
-        if ScrollingTable_debug and debug: print('ScrollingTable.scroll_right(self={})'.format(self))
+        print('ScrollingTable.scroll_right(self={})'.format(self))
 
         max_offset = len(self._table_header_order) - self._max_width  # want to show a blank col when we reach the right end. This is a visual indicator to the user that there is no more data
         if max_offset < 0:
@@ -452,14 +451,13 @@ class ScrollingTable():
 
     def _update_table(self):
         if self._initialized and not self._freeze:
-            if ScrollingTable_debug and debug: print('ScrollingTable._update_table()')
+            print('ScrollingTable._update_table()')
 
             # iterate over all the cell objects
             for cell in self._cells:
                 data_row_index = cell._row + self._current_row_offset
-                if ScrollingTable_debug and debug:
-                    #print('cell._row={}, data_row_index={}'.format(cell._row, data_row_index))
-                    pass
+                print('cell._row={}, data_row_index={}'.format(cell._row, data_row_index))
+
 
                 # Is there data for this cell to display?
                 if data_row_index < len(self._data_rows):
@@ -468,20 +466,20 @@ class ScrollingTable():
 
                     row_dict = self._data_rows[data_row_index]
                     # row_dict holds the data for this row
-                    if ScrollingTable_debug and debug: print('cell._row={}\ndata_row_index={}\nrow_dict={}'.format(cell._row, data_row_index, row_dict))
+                    print('cell._row={}\ndata_row_index={}\nrow_dict={}'.format(cell._row, data_row_index, row_dict))
 
                     col_header_index = cell._col + self._current_col_offset
                     # col_header_index is int() base 0 (left most col is 0)
-                    # if ScrollingTable_debug and debug: print('col_header_index=', col_header_index)
+                    #print('col_header_index=', col_header_index)
 
-                    # if ScrollingTable_debug and debug: print('self._table_header_order=', self._table_header_order)
+                    #print('self._table_header_order=', self._table_header_order)
                     if col_header_index < len(self._table_header_order):
                         col_header_text = self._table_header_order[col_header_index]
                     else:
                         col_header_text = ''
-                    # if ScrollingTable_debug and debug: print('col_header=', col_header)
+                    #print('col_header=', col_header)
 
-                    # if ScrollingTable_debug and debug: print('row_dict=', row_dict)
+                    #print('row_dict=', row_dict)
 
                     if col_header_text in row_dict:
                         cell_text = row_dict[col_header_text]  # cell_text holds data for this cell
@@ -489,7 +487,7 @@ class ScrollingTable():
                         # There is no data for this column header
                         cell_text = ''
 
-                    # if ScrollingTable_debug and debug: print('cell_text=', cell_text)
+                    #print('cell_text=', cell_text)
 
                     cell.SetText(str(cell_text))
                 else:
@@ -864,3 +862,33 @@ def SortListOfDictsByKeys(aList, sortKeys=None, reverse=False):
                     pass
 
     return newList
+
+
+def toPercent(Value, Min=0, Max=100):
+    '''
+    This function will take the Value, Min and Max and return a percentage
+    :param Value: float
+    :param Min: float
+    :param Max: float
+    :return: float from 0.0 to 100.0
+    '''
+    try:
+        if Value < Min:
+            return 0
+        elif Value > Max:
+            return 100
+
+        TotalRange = Max - Min
+        # print('TotalRange=', TotalRange)
+
+        FromMinToValue = Value - Min
+        # print('FromMinToValue=', FromMinToValue)
+
+        Percent = (FromMinToValue / TotalRange) * 100
+
+        return Percent
+    except Exception as e:
+        # print(e)
+        # ProgramLog('gs_tools toPercent Erorr: {}'.format(e), 'error')
+        return 0
+
