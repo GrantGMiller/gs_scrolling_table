@@ -1,6 +1,10 @@
 from extronlib.system import Wait
 from extronlib import event
 
+debug = False
+if not debug:
+    print = lambda *a, **k: None #disable print statements
+
 class ScrollingTable():
     # helper class Cell()**************************************************************
     class Cell():
@@ -84,7 +88,7 @@ class ScrollingTable():
             return self._btn
 
         def __str__(self):
-            return 'Cell Object:\nrow={}\ncol={}\nbtn={}'.format(self._row, self._col, self._btn)
+            return 'Cell Object:\nrow={}\ncol={}\nvalue={}\nbtn={}'.format(self._row, self._col, self._Text, self._btn)
 
     # class ********************************************************************
     def __init__(self):
@@ -234,7 +238,7 @@ class ScrollingTable():
 
         @event(self._header_btns, 'Released')
         def header_btn_event(button, state):
-            index = self._header_btns.index(button)
+            index = self._header_btns.index(button) + self._current_col_offset
             self.sort_by_column(index)
 
         self._refresh_Wait.Restart()
@@ -538,13 +542,14 @@ class ScrollingTable():
         raise Exception('Button {} not found in table'.format(button))
 
     def get_cell_value(self, row_number, col_number):
+        print('ScrollingTable.get_cell_value(row_number={}, col_number={})'.format(row_number, col_number))
         for cell in self._cells:
+            print('cell=', cell)
             if cell._row == row_number:
                 if cell._col == col_number:
-                    return cell._btn.Text
+                    return cell._Text
 
-        raise Exception(
-            'ScrollingTable.get_cell_value Not found. row_number={}, col_number={}'.format(row_number, col_number))
+        return None
 
     def get_row_data_from_cell(self, cell):
         # returns a dict of the row data
