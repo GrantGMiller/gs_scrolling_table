@@ -53,10 +53,14 @@ class ScrollingTable():
                         else:
                             cell.SetState(1)
 
+                print('oldHandlers=', oldHandlers)
                 if oldHandlers[state] is not None:
+                    print('calling oldHandler[{}]='.format(state), oldHandlers[state])
                     oldHandlers[state](button, state)
 
-                if self._btnNewCallbacks[state]:
+                print('self._btnNewCallbacks[state={}]='.format(state), self._btnNewCallbacks[state])
+                if self._btnNewCallbacks[state] is not None:
+                    print('calling', self._btnNewCallbacks[state])
                     self._btnNewCallbacks[state](self._parent_table, self)
 
             for state in oldHandlers:
