@@ -1,7 +1,7 @@
 from extronlib.system import Wait
 from extronlib import event
 
-debug = False
+debug = True
 if not debug:
     print = lambda *a, **k: None #disable print statements
 
@@ -57,11 +57,13 @@ class ScrollingTable():
                 if oldHandlers[state] is not None:
                     print('calling oldHandler[{}]='.format(state), oldHandlers[state])
                     oldHandlers[state](button, state)
+                    print('oldHandler done')
 
                 print('self._btnNewCallbacks[state={}]='.format(state), self._btnNewCallbacks[state])
                 if self._btnNewCallbacks[state] is not None:
-                    print('calling', self._btnNewCallbacks[state])
+                    print('calling new handler', self._btnNewCallbacks[state])
                     self._btnNewCallbacks[state](self._parent_table, self)
+                    print('new handler done')
 
             for state in oldHandlers:
                 setattr(self._btn, state, NewHandler)
