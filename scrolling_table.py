@@ -1,9 +1,11 @@
 from extronlib.system import Wait
 from extronlib import event
 
+
 debug = True
 if not debug:
-    print = lambda *a, **k: None #disable print statements
+    print = lambda *a, **k: None  # disable print statements
+
 
 class ScrollingTable():
     # helper class Cell()**************************************************************
@@ -13,12 +15,13 @@ class ScrollingTable():
         '''
 
         def __init__(self, parent_table, row, col, btn=None,
-                pressedCallback=None,
-                tappedCallback=None,
-                heldCallback=None,
-                repeatedCallback=None,
-                releasedCallback=None,
-                ):
+                     pressedCallback=None,
+                     tappedCallback=None,
+                     heldCallback=None,
+                     repeatedCallback=None,
+                     releasedCallback=None,
+                     ):
+            print('Cell.__init__(parent_table={}, row={}, col={}, btn={})'.format(parent_table, row, col, btn))
             self._parent_table = parent_table
             self._row = row
             self._col = col
@@ -29,21 +32,22 @@ class ScrollingTable():
                 'Held': heldCallback,
                 'Repeated': repeatedCallback,
                 'Released': releasedCallback,
-                }
+            }
             self._Text = ''
             self._btn.SetState(0)
 
-            oldHandlers = {
+            self.oldHandlers = {
                 'Pressed': self._btn.Pressed,
                 'Tapped': self._btn.Tapped,
                 'Held': self._btn.Held,
                 'Repeated': self._btn.Repeated,
                 'Released': self._btn.Released,
-                }
+            }
 
-            def NewHandler(button, state):
+            def NewScrollTableHandler(button, state):
                 print(
-                    'Cell NewHandler(\n button={}\n state={})\nself._btnNewCallbacks={}'.format(button, state, self._btnNewCallbacks))
+                    'Cell NewHandler(\n button={}\n state={})\nself._btnNewCallbacks={}'.format(button, state,
+                                                                                                self._btnNewCallbacks))
 
                 # Handle Mutually exclusive cells
                 if self._parent_table._cellMutex == True:
@@ -53,11 +57,18 @@ class ScrollingTable():
                         else:
                             cell.SetState(1)
 
-                print('oldHandlers=', oldHandlers)
-                if oldHandlers[state] is not None:
-                    print('calling oldHandler[{}]='.format(state), oldHandlers[state])
-                    oldHandlers[state](button, state)
-                    print('oldHandler done')
+                print('self.oldHandlers=', self.oldHandlers)
+                if self.oldHandlers[state] is not None:
+                    if self.oldHandlers[state] is not NewScrollTableHandler:
+                        print('calling self.oldHandler[{}]='.format(state), self.oldHandlers[state])
+                        print('self.oldHandlers[{}].__name__='.format(state), self.oldHandlers[state].__name__)
+                        func = self.oldHandlers[state]
+                        print('func=', func)
+                        func(button, state)
+                        print('oldHandler done')
+                    else:
+                        # This should not happen
+                        print('Error: self.oldHandlers[{}] is NewHandler'.format(state))
 
                 print('self._btnNewCallbacks[state={}]='.format(state), self._btnNewCallbacks[state])
                 if self._btnNewCallbacks[state] is not None:
@@ -65,8 +76,12 @@ class ScrollingTable():
                     self._btnNewCallbacks[state](self._parent_table, self)
                     print('new handler done')
 
-            for state in oldHandlers:
-                setattr(self._btn, state, NewHandler)
+            for state in self.oldHandlers.keys():
+                print('Setting btn={}, state={}, func={}'.format(self._btn, state, NewScrollTableHandler))
+
+                @event(self._btn, state) #cant use setattr if using extronlib_pro :-(
+                def NewHandler53843(button, state):
+                    NewScrollTableHandler(button, state)
 
         def SetText(self, text):
             if self._Text is not text:
@@ -146,7 +161,7 @@ class ScrollingTable():
 
         self._initialized = False
 
-    #Setup the table ***********************************************************
+    # Setup the table ***********************************************************
     @property
     def CellPressed(self):  # getter
         return self._cell_pressed_callback
@@ -258,12 +273,12 @@ class ScrollingTable():
             arg.SetText('')
             col_number = index
             self.register_cell(row_number, col_number, btn=arg,
-                pressedCallback = self._cell_pressed_callback,
-                tappedCallback = self._cell_tapped_callback,
-                heldCallback = self._cell_held_callback,
-                repeatedCallback = self._cell_repeated_callback,
-                releasedCallback = self._cell_released_callback,
-                )
+                               pressedCallback=self._cell_pressed_callback,
+                               tappedCallback=self._cell_tapped_callback,
+                               heldCallback=self._cell_held_callback,
+                               repeatedCallback=self._cell_repeated_callback,
+                               releasedCallback=self._cell_released_callback,
+                               )
 
         self._refresh_Wait.Restart()
 
@@ -279,7 +294,7 @@ class ScrollingTable():
                 self._table_header_order.append(key)
 
         self.IsScrollable()
-        self._initialized = True #assuming that if the user is adding data to the table, then they are done setting up the table
+        self._initialized = True  # assuming that if the user is adding data to the table, then they are done setting up the table
         self._refresh_Wait.Restart()
 
     def ClearMutex(self):
@@ -330,7 +345,7 @@ class ScrollingTable():
         self.IsScrollable()
         self._refresh_Wait.Restart()
 
-    #Manipulating the table data************************************************
+    # Manipulating the table data************************************************
 
     def has_row(self, where_dict):
         print('ScrollingTable.has_row(where_dict={})'.format(where_dict))
@@ -420,7 +435,8 @@ class ScrollingTable():
         print('self._max_height=', self._max_height)
         print('len(self._data_rows)=', len(self._data_rows))
 
-        max_offset = len(self._data_rows) - self._max_height  #want to show a blank row when we reach the bottom. This is a visual indicator to the user that there is no more data
+        max_offset = len(
+            self._data_rows) - self._max_height  # want to show a blank row when we reach the bottom. This is a visual indicator to the user that there is no more data
         if max_offset < 0:
             max_offset = 0
         print('max_offset=', max_offset)
@@ -442,7 +458,8 @@ class ScrollingTable():
     def scroll_right(self):
         print('ScrollingTable.scroll_right(self={})'.format(self))
 
-        max_offset = len(self._table_header_order) - self._max_width  # want to show a blank col when we reach the right end. This is a visual indicator to the user that there is no more data
+        max_offset = len(
+            self._table_header_order) - self._max_width  # want to show a blank col when we reach the right end. This is a visual indicator to the user that there is no more data
         if max_offset < 0:
             max_offset = 0
 
@@ -453,11 +470,11 @@ class ScrollingTable():
         self._update_table()
 
     def freeze(self, state):
-        #If the programmer knows they are going to be updating a bunch of data. They can freeze the table, do all their updates, then unfreeze it.
-        #Unfreezing will update the table
+        # If the programmer knows they are going to be updating a bunch of data. They can freeze the table, do all their updates, then unfreeze it.
+        # Unfreezing will update the table
         self._freeze = state
         if state is False:
-            self._update_table() #immediate update
+            self._update_table()  # immediate update
 
     def _update_table(self):
         if self._initialized and not self._freeze:
@@ -467,7 +484,6 @@ class ScrollingTable():
             for cell in self._cells:
                 data_row_index = cell._row + self._current_row_offset
                 print('cell._row={}, data_row_index={}'.format(cell._row, data_row_index))
-
 
                 # Is there data for this cell to display?
                 if data_row_index < len(self._data_rows):
@@ -480,16 +496,16 @@ class ScrollingTable():
 
                     col_header_index = cell._col + self._current_col_offset
                     # col_header_index is int() base 0 (left most col is 0)
-                    #print('col_header_index=', col_header_index)
+                    # print('col_header_index=', col_header_index)
 
-                    #print('self._table_header_order=', self._table_header_order)
+                    # print('self._table_header_order=', self._table_header_order)
                     if col_header_index < len(self._table_header_order):
                         col_header_text = self._table_header_order[col_header_index]
                     else:
                         col_header_text = ''
-                    #print('col_header=', col_header)
+                    # print('col_header=', col_header)
 
-                    #print('row_dict=', row_dict)
+                    # print('row_dict=', row_dict)
 
                     if col_header_text in row_dict:
                         cell_text = row_dict[col_header_text]  # cell_text holds data for this cell
@@ -497,7 +513,7 @@ class ScrollingTable():
                         # There is no data for this column header
                         cell_text = ''
 
-                    #print('cell_text=', cell_text)
+                    # print('cell_text=', cell_text)
 
                     cell.SetText(str(cell_text))
                 else:
@@ -506,7 +522,7 @@ class ScrollingTable():
 
                     if self._hideEmptyRows:
                         if data_row_index >= len(self._data_rows):
-                            #There are more rows on the UI than there are rows of data.
+                            # There are more rows on the UI than there are rows of data.
                             cell.SetVisible(False)
 
             # update scroll up/down controls
@@ -521,7 +537,7 @@ class ScrollingTable():
                 percent = toPercent(self._current_col_offset, 0, max_col_offset)
                 self._scroll_leftright_level.SetLevel(percent)
 
-            #update col headers
+            # update col headers
             for headerButton in self._header_btns:
                 headerButtonIndex = self._header_btns.index(headerButton)
                 headerTextIndex = self._current_col_offset + headerButtonIndex
@@ -642,7 +658,7 @@ class ScrollingTable():
         '''
         basically if there are 10 rows on your TLP, but you only have 5 rows of data, then you dont need to show scroll buttons, hide the controls assiciated with scrolling
         '''
-        #up/down scroll controls
+        # up/down scroll controls
         if len(self._data_rows) > self._max_height:
             if self._scroll_updown_level is not None:
                 self._scroll_updown_level.SetVisible(True)
@@ -669,7 +685,7 @@ class ScrollingTable():
             if self._scroll_updown_label is not None:
                 self._scroll_updown_label.SetVisible(False)
 
-        #left/right scroll controls
+        # left/right scroll controls
         if len(self._table_header_order) > self._max_width:
             if self._scroll_leftright_level is not None:
                 self._scroll_leftright_level.SetVisible(True)
@@ -776,14 +792,14 @@ def SortListOfDictsByKeys(aList, sortKeys=None, reverse=False):
 
     sortKeys.extend(missingKeys)
 
-    aList = aList.copy() #dont want to hurt the users data
+    aList = aList.copy()  # dont want to hurt the users data
 
     newList = []
 
-    #break list into smaller list
+    # break list into smaller list
     subList = {
-        #'sortKey': [{...}], #all the dict that have the sortKey are in now accessible thru subList['sortKey']
-        }
+        # 'sortKey': [{...}], #all the dict that have the sortKey are in now accessible thru subList['sortKey']
+    }
 
     for d in aList:
         for sortKey in sortKeys:
@@ -793,18 +809,18 @@ def SortListOfDictsByKeys(aList, sortKeys=None, reverse=False):
 
                 subList[sortKey].append(d)
 
-    #now all the dicts have been split by sortKey, there are prob duplicates
+    # now all the dicts have been split by sortKey, there are prob duplicates
 
-    #we must now sort the sub list
+    # we must now sort the sub list
     for sortKey, l in subList.copy().items():
         l = SortListDictByKey(l, sortKey, reverse)
         subList[sortKey] = l
 
-    #now all the sublist are sorted by their respective keys
+    # now all the sublist are sorted by their respective keys
 
 
     def contains(d, subD):
-        #print('contains d={}, subD={}'.format(d, subD))
+        # print('contains d={}, subD={}'.format(d, subD))
         containsAllKeys = True
         for key in subD:
             if key not in d:
@@ -819,10 +835,10 @@ def SortListOfDictsByKeys(aList, sortKeys=None, reverse=False):
         return True
 
     def getDictWith(l2, subD):
-        #l = list of dicts
-        #subD = dict
-        #returns a list of dicts from within l that contain subD
-        #print('getDictWith l={}, subD={}'.format(l2, subD))
+        # l = list of dicts
+        # subD = dict
+        # returns a list of dicts from within l that contain subD
+        # print('getDictWith l={}, subD={}'.format(l2, subD))
         result = []
 
         for d in l2:
@@ -841,8 +857,7 @@ def SortListOfDictsByKeys(aList, sortKeys=None, reverse=False):
     for key in subList:
         print('subList[{}] = {}'.format(key, subList[key]))
 
-
-    #assemble the subList into a single list with the final order
+    # assemble the subList into a single list with the final order
     newList = []
 
     for thisKey in sortKeys:
@@ -856,17 +871,16 @@ def SortListOfDictsByKeys(aList, sortKeys=None, reverse=False):
             print('\n thisKey={}, thisList={}'.format(thisKey, thisList))
             print('nextKey={}, nextList={}'.format(nextKey, nextList))
 
-
             for thisValue in getAllValuesOfKey(thisList, thisKey):
                 for nextValue in getAllValuesOfKey(nextList, nextKey):
-                    dictsWithThisValueAndNextValue = getDictWith(aList, {thisKey:thisValue, nextKey:nextValue})
+                    dictsWithThisValueAndNextValue = getDictWith(aList, {thisKey: thisValue, nextKey: nextValue})
                     for d in dictsWithThisValueAndNextValue:
                         if d not in newList:
                             newList.append(d)
 
         except Exception as e:
-            #print('e=', e)
-            #probably on the last index
+            # print('e=', e)
+            # probably on the last index
             for d in thisList:
                 if d not in newList:
                     newList.append(d)
@@ -902,4 +916,3 @@ def toPercent(Value, Min=0, Max=100):
         # print(e)
         # ProgramLog('gs_tools toPercent Erorr: {}'.format(e), 'error')
         return 0
-
