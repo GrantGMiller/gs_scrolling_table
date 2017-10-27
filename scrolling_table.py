@@ -2,7 +2,7 @@ from extronlib.system import Wait
 from extronlib import event
 
 
-debug = True
+debug = False
 if not debug:
     print = lambda *a, **k: None  # disable print statements
 
@@ -51,6 +51,7 @@ class ScrollingTable():
 
                 # Handle Mutually exclusive cells
                 if self._parent_table._cellMutex == True:
+                    self._parent_table._cellMutexSelectedRow = self._row + self._parent_table._current_row_offset
                     for cell in self._parent_table._cells:
                         if cell._row != self._row:
                             cell.SetState(0)
@@ -108,6 +109,10 @@ class ScrollingTable():
         def get_button(self):
             return self._btn
 
+        @property
+        def State(self):
+            return self._btn.State
+
         def __str__(self):
             return 'Cell Object:\nrow={}\ncol={}\nvalue={}\nbtn={}'.format(self._row, self._col, self._Text, self._btn)
 
@@ -143,6 +148,7 @@ class ScrollingTable():
         self._scroll_leftright_label = None
 
         self._cellMutex = False
+        self._cellMutexSelectedRow = None
         self._freeze = False
         self._hideEmptyRows = False
 
@@ -482,6 +488,15 @@ class ScrollingTable():
 
             # iterate over all the cell objects
             for cell in self._cells:
+
+                if self._cellMutex is True: #highlight the selected row (even when scrolling)
+                    if cell._row + self._current_row_offset == self._cellMutexSelectedRow:
+                        if cell.State is not 1:
+                            cell.SetState(1)
+                    else:
+                        if cell.State is not 0:
+                            cell.SetState(0)
+
                 data_row_index = cell._row + self._current_row_offset
                 print('cell._row={}, data_row_index={}'.format(cell._row, data_row_index))
 
