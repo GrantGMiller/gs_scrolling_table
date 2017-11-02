@@ -151,6 +151,9 @@ class ScrollingTable():
         self._cellMutexSelectedRow = None
         self._freeze = False
         self._hideEmptyRows = False
+        self._stateRules = {
+            # 'text': int(state)
+        }
 
         # _cell_pressed_callback should accept 2 params; the scrolling table object, and the cell object
 
@@ -527,10 +530,18 @@ class ScrollingTable():
                     else:
                         # There is no data for this column header
                         cell_text = ''
-
+                    cell_text = str(cell_text)
                     # print('cell_text=', cell_text)
 
-                    cell.SetText(str(cell_text))
+                    cell.SetText(cell_text)
+
+                    # Set the state if applicable
+                    if cell_text in self._stateRules:
+                        if isinstance(self._stateRules[cell_text], list):
+                            cell.SetBlinking('Slow', self._stateRules[cell_text])
+                        else:
+                            cell.SetState(self._stateRules[cell_text])
+
                 else:
                     # no data for this cell
                     cell.SetText('')
@@ -727,6 +738,15 @@ class ScrollingTable():
             if self._scroll_leftright_label is not None:
                 self._scroll_leftright_label.SetVisible(False)
 
+    def AddStateRule(self, text, state):
+        '''
+        Add a rule for setting the state of a button if its text matches.
+        Example: self.AddStateRule('Connected', 1) will SetState(1) on the button if the text shows disconnected
+        :param text: str
+        :param state: int or list of ints
+        :return:
+        '''
+        self._stateRules[text] = state
 
 def SortListDictByKey(aList, sortKey, reverse=False):
     '''
