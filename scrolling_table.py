@@ -84,6 +84,7 @@ class ScrollingTable():
                 def NewHandler53843(button, state):
                     NewScrollTableHandler(button, state)
 
+
         def SetText(self, text):
             if self._Text is not text:
                 self._btn.SetText(text)
@@ -238,6 +239,32 @@ class ScrollingTable():
         # Setting this true will highlight a row when it is pressed
         self._cellMutex = state
 
+    def _DictContains(self, superDict, subDict):
+        # Returns True if superDict contains all the key/values of subDict
+        all_keys_match = True
+        for key in subDict:
+            if key in superDict:
+                if superDict[key] != subDict[key]:
+                    all_keys_match = False
+                    break
+            else:
+                all_keys_match = False
+                break
+
+        return all_keys_match
+
+    def GetRowNumber(self, searchRow):
+        for rowNumber, row in enumerate(self.get_row_data()):
+            if row == searchRow:
+                return rowNumber
+
+    def ForceCellMutex(self, whereDict):
+        for rowNumber, rowData in enumerate(self.get_row_data()):
+            if self._DictContains(superDict=row, subDict=whereDict):
+                self._cellMutexSelectedRow = rowNumber
+                self._update_table()
+                break
+
     def set_table_header_order(self, header_list=[]):
         # header_list example: ['IP Address', 'Port']
         all_headers = []
@@ -272,6 +299,14 @@ class ScrollingTable():
             self.sort_by_column(index)
 
         self._refresh_Wait.Restart()
+
+    def GetRowSize(self):
+        # Return how tall the table is (the max num of rows that can be displayed at once
+        return self._max_height
+
+    def GetColSize(self):
+        # Return how wide the table is (the max num of cols that can be displayed at once
+        return self._max_width
 
     def register_row_buttons(self, row_number, *args):
         ''' *args = tuple of Button objects
@@ -655,16 +690,20 @@ class ScrollingTable():
         self._refresh_Wait.Restart()
 
     def register_scroll_updown_level(self, level):
+        # This will automatically SetVisible the button if the table is too long
         # level = extronlib.ui.Level
         self._scroll_updown_level = level
 
     def register_scroll_up_button(self, button):
+        # This will automatically SetVisible the button if the table is too long
         self._scroll_up_button = button
 
     def register_scroll_down_button(self, button):
+        # This will automatically SetVisible the button if the table is too long
         self._scroll_down_button = button
 
     def register_scroll_updown_label(self, label):
+        # This will automatically SetVisible the button if the table is too long
         self._scroll_updown_label = label
 
     def register_scroll_leftright_level(self, level):
