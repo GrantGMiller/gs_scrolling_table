@@ -1,8 +1,7 @@
-from extronlib.system import Wait
+from extronlib.system import Wait, ProgramLog
 from extronlib import event
 
-
-debug = False
+debug = True
 if not debug:
     print = lambda *a, **k: None  # disable print statements
 
@@ -50,13 +49,9 @@ class ScrollingTable():
                                                                                                 self._btnNewCallbacks))
 
                 # Handle Mutually exclusive cells
-                if self._parent_table._cellMutex == True:
-                    self._parent_table._cellMutexSelectedRow = self._row + self._parent_table._current_row_offset
-                    for cell in self._parent_table._cells:
-                        if cell._row != self._row:
-                            cell.SetState(0)
-                        else:
-                            cell.SetState(1)
+                if self._parent_table._rowMutex == True:
+                    self._parent_table._rowMutexSelectedRow = self._row + self._parent_table._current_row_offset
+                    self._parent_table._update_table()
 
                 print('self.oldHandlers=', self.oldHandlers)
                 if self.oldHandlers[state] is not None:
@@ -80,10 +75,9 @@ class ScrollingTable():
             for state in self.oldHandlers.keys():
                 print('Setting btn={}, state={}, func={}'.format(self._btn, state, NewScrollTableHandler))
 
-                @event(self._btn, state) #cant use setattr if using extronlib_pro :-(
+                @event(self._btn, state)  # cant use setattr if using extronlib_pro :-(
                 def NewHandler53843(button, state):
                     NewScrollTableHandler(button, state)
-
 
         def SetText(self, text):
             if self._Text is not text:
@@ -148,12 +142,14 @@ class ScrollingTable():
         self._scroll_right_button = None
         self._scroll_leftright_label = None
 
-        self._cellMutex = False
-        self._cellMutexSelectedRow = None
+        self._rowMutex = False
+        self._rowMutexSelectedRow = None
         self._freeze = False
         self._hideEmptyRows = False
         self._stateRules = {
-            # 'text': int(state)
+            # 'text': int(state),
+            # None: int(state), # None is for the 'default' state, which may not exists
+            # True: int(state), # State when row is selected
         }
 
         # _cell_pressed_callback should accept 2 params; the scrolling table object, and the cell object
@@ -235,9 +231,17 @@ class ScrollingTable():
     def HideEmptyRows(self, state):
         self._hideEmptyRows = state
 
-    def SetCellMutex(self, state):
-        # Setting this true will highlight a row when it is pressed
-        self._cellMutex = state
+    def SetRowMutex(self, state):
+        '''
+        Setting this true will highlight a row when it is pressed.
+        You can also use "ForceRowMutex" to highlight a row just once
+        You can use "ClearMutex" to not highlight any rows
+
+        See also the "StateRules" methods for defining what color rows appear as when selected
+        :param state: bool
+        :return:
+        '''
+        self._rowMutex = state
 
     def _DictContains(self, superDict, subDict):
         # Returns True if superDict contains all the key/values of subDict
@@ -250,7 +254,7 @@ class ScrollingTable():
             else:
                 all_keys_match = False
                 break
-
+        print('_DictContains(superDict=', superDict,', subDict=', subDict, ', all_keys_match=', all_keys_match)
         return all_keys_match
 
     def GetRowNumber(self, searchRow):
@@ -258,15 +262,25 @@ class ScrollingTable():
             if row == searchRow:
                 return rowNumber
 
-    def ForceCellMutex(self, whereDict):
+    def ForceRowMutex(self, whereDict):
+        # Force the table to highlight the row that contains whereDict
+        print('ForceRowMutex(whereDict=', whereDict, 'beforeMutex=', self._rowMutexSelectedRow)
         for rowNumber, rowData in enumerate(self.get_row_data()):
-            if self._DictContains(superDict=row, subDict=whereDict):
-                self._cellMutexSelectedRow = rowNumber
-                self._update_table()
+            if self._DictContains(superDict=rowData, subDict=whereDict):
+                self._rowMutexSelectedRow = rowNumber
                 break
 
-    def set_table_header_order(self, header_list=[]):
+        else: #only runs if there is no break is hit
+            # The whereDict was not found, highlight nothing
+            self._rowMutexSelectedRow = None
+
+        self._refresh_Wait.Restart()
+
+        print('afterMutex=', self._rowMutexSelectedRow)
+
+    def set_table_header_order(self, header_list=None):
         # header_list example: ['IP Address', 'Port']
+        assert isinstance(header_list, list)
         all_headers = []
         for row in self._data_rows:
             for key in row:
@@ -302,10 +316,12 @@ class ScrollingTable():
 
     def GetRowSize(self):
         # Return how tall the table is (the max num of rows that can be displayed at once
+        self._find_max_row_col()
         return self._max_height
 
     def GetColSize(self):
         # Return how wide the table is (the max num of cols that can be displayed at once
+        self._find_max_row_col()
         return self._max_width
 
     def register_row_buttons(self, row_number, *args):
@@ -342,9 +358,10 @@ class ScrollingTable():
         self._refresh_Wait.Restart()
 
     def ClearMutex(self):
-        if self._cellMutex is True:
+        if self._rowMutex is True:
             for cell in self._cells:
                 cell.SetState(0)
+        self._rowMutexSelectedRow = None
 
     def clear_all_data(self):
         print('ScrollingTable.clear_all_data()')
@@ -457,12 +474,15 @@ class ScrollingTable():
         '''
         Determine the height and width of the viewable table
         '''
+        print('_find_max_row_col old_width={}, old_height={}'.format(self._max_width, self._max_height))
         for cell in self._cells:
             if cell._col > self._max_width:
                 self._max_width = cell._col + 1  # self._max_width is width of ui table(not 0 base); 0 means no width
 
             if cell._row > self._max_height:
                 self._max_height = cell._row + 1  # self._max_height is height of ui table(not 0 base); 0 means no height
+
+        print('_find_max_row_col new_width={}, new_height={}'.format(self._max_width, self._max_height))
 
     def scroll_up(self):
         print('ScrollingTable.scroll_up(self={})'.format(self))
@@ -523,17 +543,12 @@ class ScrollingTable():
     def _update_table(self):
         if self._initialized and not self._freeze:
             print('ScrollingTable._update_table()')
+            print('self._current_row_offset=', self._current_row_offset)
+            print('self._rowMutexSelectedRow=', self._rowMutexSelectedRow)
+            print('self._rowMutex=', self._rowMutex)
 
             # iterate over all the cell objects
             for cell in self._cells:
-
-                if self._cellMutex is True: #highlight the selected row (even when scrolling)
-                    if cell._row + self._current_row_offset == self._cellMutexSelectedRow:
-                        if cell.State is not 1:
-                            cell.SetState(1)
-                    else:
-                        if cell.State is not 0:
-                            cell.SetState(0)
 
                 data_row_index = cell._row + self._current_row_offset
                 print('cell._row={}, data_row_index={}'.format(cell._row, data_row_index))
@@ -572,11 +587,46 @@ class ScrollingTable():
 
                     # Set the state if applicable
                     if cell_text in self._stateRules:
-                        if isinstance(self._stateRules[cell_text], list):
-                            cell.SetBlinking('Slow', self._stateRules[cell_text])
+                        if self._rowMutexSelectedRow is None:
+                            if isinstance(self._stateRules[cell_text], list):
+                                cell.SetBlinking('Slow', self._stateRules[cell_text])
+                            else:
+                                cell.SetState(self._stateRules[cell_text])
                         else:
-                            cell.SetState(self._stateRules[cell_text])
-
+                            # Cell mutex is True
+                            # If the row is not selected, then set the state according to the rule
+                            # If the row is selected,
+                            if cell.get_row() + self._current_row_offset == self._rowMutexSelectedRow:
+                                #row is selected
+                                selectedState = self._stateRules.get(True, None)
+                                if selectedState is not None:
+                                    cell.SetState(selectedState)
+                                else:
+                                    pass
+                            else:
+                                #row is not selected
+                                if isinstance(self._stateRules[cell_text], list):
+                                    cell.SetBlinking('Slow', self._stateRules[cell_text])
+                                else:
+                                    cell.SetState(self._stateRules[cell_text])
+                    else:
+                        # This text is not in the _stateRules
+                        if None in self._stateRules:
+                            # A Default state exists
+                            if self._rowMutexSelectedRow is None:
+                                cell.SetState(self._stateRules[None])
+                            else:
+                                # Cell mutex is True
+                                # If the row is not selected, then set the state according to the rule
+                                # If the row is selected, dont do anything
+                                if cell.get_row() + self._current_row_offset == self._rowMutexSelectedRow:
+                                    selectedState = self._stateRules.get(True, None)
+                                    if selectedState is not None:
+                                        cell.SetState(selectedState)
+                                    else:
+                                        pass
+                                else:
+                                    cell.SetState(self._stateRules[None])
                 else:
                     # no data for this cell
                     cell.SetText('')
@@ -668,7 +718,7 @@ class ScrollingTable():
 
     def reset_scroll(self):
         self._current_row_offset = 0
-        self._refresh_Wait.Restart()
+        self._update_table()
 
     def sort_by_column_list(self, colNumberList, reverse=False):
         colHeaderList = []
@@ -777,15 +827,114 @@ class ScrollingTable():
             if self._scroll_leftright_label is not None:
                 self._scroll_leftright_label.SetVisible(False)
 
-    def AddStateRule(self, text, state):
+    def AddNotSelectedTextStateRule(self, text, state):
         '''
-        Add a rule for setting the state of a button if its text matches.
-        Example: self.AddStateRule('Connected', 1) will SetState(1) on the button if the text shows disconnected
+        This sets a state rule for when the row is not selected, and the text matches
+        Has precedence over "AddNotSelectedStateRule"
+        Example: self.AddNotSelectedTextStateRule('Connected', 1) will SetState(1) on the button if the text shows disconnected
         :param text: str
         :param state: int or list of ints
         :return:
         '''
         self._stateRules[text] = state
+
+    def AddNotSelectedStateRule(self, state):
+        '''
+        This adds a state rule for when the row is not selected.
+        :param state: int
+        :return:
+        '''
+        self._stateRules[None] = state
+
+    def AddSelectedStateRule(self, state):
+        '''
+        This adds a state rule for when the row is selected.
+        Has precedence over "AddNotSelectedTextStateRule"
+        :param state: int
+        :return:
+        '''
+        self._stateRules[True] = state
+
+    def MoveRow(self, whereDict, direction=None):
+        '''
+        This method will move a row up or down on the table
+        :param whereDict: dict or part of the dict that needs to be moved
+        :param direction: int - positive means move down, negative means move up, 0 is ignored
+        :return:
+        '''
+        print('MoveRow(whereDict={}, direction={})'.format(whereDict, direction))
+        if direction in [None, 0]:
+            return
+        row = self.get_row_data(whereDict)# returns a list of dicts
+        if len(row) > 0:
+            row = row[0]  # only worry about the first one
+        rowCurrentIndex = self._data_rows.index(row)
+
+        if row not in self._data_rows:
+            print('MoveRow() No row to move with row={}, direction={}'.format(row, direction))
+            return  # cant move it if its not there
+
+        self._data_rows.remove(row)  # Temporarily remove the row from the data set
+        rowNewIndex = rowCurrentIndex + direction  # This is where the row will be placed
+        self._data_rows.insert(rowNewIndex, row)
+        self._update_table()
+
+    def MoveRowIndex(self, whereDict, newIndex):
+        '''
+        This method will move a row to the newIndex position
+        :param whereDict:
+        :param newIndex:
+        :return:
+        '''
+        print('MoveRowIndex(whereDict={}, newIndex={})'.format(whereDict, newIndex))
+        row = self.get_row_data(whereDict)# returns a list of dicts
+        if len(row) > 0:
+            row = row[0]  # only worry about the first one
+
+        if row not in self._data_rows:
+            print('MoveRowIndex() No row to move with row={}, newIndex={}'.format(row, newIndex))
+            return  # cant move it if its not there
+
+        self._data_rows.remove(row)
+        self._data_rows.insert(newIndex, row)
+        self._update_table()
+
+    def MoveRowRelative(self, moveDict, relativeDict, position='Above'):
+        '''
+        This method will move the moveDict next to the relativeDict
+        :param moveDict:
+        :param relativeDict:
+        :param position: 'Above' means put moveDict on top of relativeDict, 'Below' means put moveDict below relativeDict
+        :return:
+        '''
+        print('MoveRowRelative(moveDict={}, relativeDict={}, position={})'.format(moveDict, relativeDict, position))
+        relativeRow = self.get_row_data(relativeDict)  # returns a list of dicts
+        if len(relativeRow) > 0:
+            relativeRow = relativeRow[0]  # only worry about the first one
+        else:
+            print('MoveRowRelative() relativeRow not found. relativeDict={}'.format(relativeDict))
+            return # the relative row was not found. do nothing.
+
+        moveRow = self.get_row_data(moveDict) # returns a list of dicts
+        if len(moveRow) > 0:
+            moveRow = moveRow[0]
+
+        if moveRow not in self._data_rows:
+            print('MoveRowRelative() No row to move with moveRow={}, moveDict={}'.format(moveRow, moveDict))
+            return # cant move it if its not there
+
+        self._data_rows.remove(moveRow)
+
+        # We remove the moveRow first... now the relativeIndex is correct
+        relativeIndex = self._data_rows.index(relativeRow)
+
+        if position == 'Above':
+            self._data_rows.insert(relativeIndex, moveRow)
+        elif position == 'Below':
+            self._data_rows.insert(relativeIndex + 1, moveRow)
+
+        self._update_table()
+
 
 def SortListDictByKey(aList, sortKey, reverse=False):
     '''
