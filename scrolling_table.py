@@ -1,7 +1,7 @@
 from extronlib.system import Wait, ProgramLog
 from extronlib import event
 
-debug = True
+debug = False
 if not debug:
     print = lambda *a, **k: None  # disable print statements
 
