@@ -254,7 +254,7 @@ class ScrollingTable():
             else:
                 all_keys_match = False
                 break
-        print('_DictContains(superDict=', superDict,', subDict=', subDict, ', all_keys_match=', all_keys_match)
+        print('_DictContains(superDict=', superDict, ', subDict=', subDict, ', all_keys_match=', all_keys_match)
         return all_keys_match
 
     def GetRowNumber(self, searchRow):
@@ -270,7 +270,7 @@ class ScrollingTable():
                 self._rowMutexSelectedRow = rowNumber
                 break
 
-        else: #only runs if there is no break is hit
+        else:  # only runs if there is no break is hit
             # The whereDict was not found, highlight nothing
             self._rowMutexSelectedRow = None
 
@@ -304,13 +304,18 @@ class ScrollingTable():
         example: ScrollingTable.register_header_buttons(Button(TLP, 1), Button(TLP, 2) )
         '''
         self._header_btns = []
-        for arg in args:
-            self._header_btns.append(arg)
+        for button in args:
+            self._header_btns.append(button)
 
+        @event(self._header_btns, 'Pressed')
         @event(self._header_btns, 'Released')
         def header_btn_event(button, state):
-            index = self._header_btns.index(button) + self._current_col_offset
-            self.sort_by_column(index)
+            if state == 'Pressed':
+                button.SetState(1)
+            elif state == 'Released':
+                button.SetState(0)
+                index = self._header_btns.index(button) + self._current_col_offset
+                self.sort_by_column(index)
 
         self._refresh_Wait.Restart()
 
@@ -597,14 +602,14 @@ class ScrollingTable():
                             # If the row is not selected, then set the state according to the rule
                             # If the row is selected,
                             if cell.get_row() + self._current_row_offset == self._rowMutexSelectedRow:
-                                #row is selected
+                                # row is selected
                                 selectedState = self._stateRules.get(True, None)
                                 if selectedState is not None:
                                     cell.SetState(selectedState)
                                 else:
                                     pass
                             else:
-                                #row is not selected
+                                # row is not selected
                                 if isinstance(self._stateRules[cell_text], list):
                                     cell.SetBlinking('Slow', self._stateRules[cell_text])
                                 else:
@@ -865,7 +870,7 @@ class ScrollingTable():
         print('MoveRow(whereDict={}, direction={})'.format(whereDict, direction))
         if direction in [None, 0]:
             return
-        row = self.get_row_data(whereDict)# returns a list of dicts
+        row = self.get_row_data(whereDict)  # returns a list of dicts
         if len(row) > 0:
             row = row[0]  # only worry about the first one
         rowCurrentIndex = self._data_rows.index(row)
@@ -887,7 +892,7 @@ class ScrollingTable():
         :return:
         '''
         print('MoveRowIndex(whereDict={}, newIndex={})'.format(whereDict, newIndex))
-        row = self.get_row_data(whereDict)# returns a list of dicts
+        row = self.get_row_data(whereDict)  # returns a list of dicts
         if len(row) > 0:
             row = row[0]  # only worry about the first one
 
@@ -913,15 +918,15 @@ class ScrollingTable():
             relativeRow = relativeRow[0]  # only worry about the first one
         else:
             print('MoveRowRelative() relativeRow not found. relativeDict={}'.format(relativeDict))
-            return # the relative row was not found. do nothing.
+            return  # the relative row was not found. do nothing.
 
-        moveRow = self.get_row_data(moveDict) # returns a list of dicts
+        moveRow = self.get_row_data(moveDict)  # returns a list of dicts
         if len(moveRow) > 0:
             moveRow = moveRow[0]
 
         if moveRow not in self._data_rows:
             print('MoveRowRelative() No row to move with moveRow={}, moveDict={}'.format(moveRow, moveDict))
-            return # cant move it if its not there
+            return  # cant move it if its not there
 
         self._data_rows.remove(moveRow)
 
