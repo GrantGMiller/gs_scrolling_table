@@ -1,4 +1,4 @@
-from extronlib.system import Wait, ProgramLog
+from extronlib_pro import Wait
 from extronlib import event
 
 debug = False
