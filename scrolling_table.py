@@ -1,4 +1,7 @@
-from extronlib_pro import Wait
+try:
+    from extronlib_pro import Wait
+except:
+    from extronlib.system import Wait
 from extronlib import event
 
 debug = False
