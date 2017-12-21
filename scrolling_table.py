@@ -157,16 +157,9 @@ class ScrollingTable():
 
         # _cell_pressed_callback should accept 2 params; the scrolling table object, and the cell object
 
-        def UpdateTable():
-            try:
-                self._update_table()
-            except Exception as e:
-                # need this try/except because current Wait class only shows generic "Wait error" message
-                print('Exception in self._update_table()\n', e)
-
-        self._refresh_Wait = Wait(0.2,
-                                  UpdateTable)  # This controls how often the table UI gets updated. 0.2 seconds means the TLP has a  max refresh of 5 times per second.
-        self._refresh_Wait.Cancel()
+        # This controls how often the table UI gets updated. 0.2 seconds means the TLP has a  max refresh of 5 times per second.
+        self._waitUpdateTable = Wait(0.2, self._update_table)
+        self._waitUpdateTable.Cancel()
 
         self._initialized = False
 
@@ -277,7 +270,7 @@ class ScrollingTable():
             # The whereDict was not found, highlight nothing
             self._rowMutexSelectedRow = None
 
-        self._refresh_Wait.Restart()
+        self._waitUpdateTable.Restart()
 
         print('afterMutex=', self._rowMutexSelectedRow)
 
@@ -300,7 +293,7 @@ class ScrollingTable():
         header_list.extend(all_headers)
         self._table_header_order = header_list
 
-        self._refresh_Wait.Restart()
+        self._waitUpdateTable.Restart()
 
     def register_header_buttons(self, *args):
         '''
@@ -320,7 +313,7 @@ class ScrollingTable():
                 index = self._header_btns.index(button) + self._current_col_offset
                 self.sort_by_column(index)
 
-        self._refresh_Wait.Restart()
+        self._waitUpdateTable.Restart()
 
     def GetRowSize(self):
         # Return how tall the table is (the max num of rows that can be displayed at once
@@ -348,7 +341,7 @@ class ScrollingTable():
                                releasedCallback=self._cell_released_callback,
                                )
 
-        self._refresh_Wait.Restart()
+        self._waitUpdateTable.Restart()
 
     def add_new_row_data(self, row_dict):
         '''example:
@@ -363,7 +356,7 @@ class ScrollingTable():
 
         self.IsScrollable()
         self._initialized = True  # assuming that if the user is adding data to the table, then they are done setting up the table
-        self._refresh_Wait.Restart()
+        self._waitUpdateTable.Restart()
 
     def ClearMutex(self):
         if self._rowMutex is True:
@@ -412,7 +405,7 @@ class ScrollingTable():
                     row[key] = replace_dict[key]
 
         self.IsScrollable()
-        self._refresh_Wait.Restart()
+        self._waitUpdateTable.Restart()
 
     # Manipulating the table data************************************************
 
@@ -474,7 +467,7 @@ class ScrollingTable():
 
         self._find_max_row_col()
 
-        self._refresh_Wait.Restart()
+        self._waitUpdateTable.Restart()
 
     # Displaying the table data ************************************************
 
@@ -738,14 +731,14 @@ class ScrollingTable():
         self._data_rows = SortListOfDictsByKeys(self._data_rows, colHeaderList, reverse)
         print('sort_by_column_list after=', self._data_rows)
 
-        self._refresh_Wait.Restart()
+        self._waitUpdateTable.Restart()
 
     def sort_by_column(self, col_number, reverse=False):
         '''
         '''
         key = self._table_header_order[col_number]
         self._data_rows = SortListDictByKey(self._data_rows, key, reverse)
-        self._refresh_Wait.Restart()
+        self._waitUpdateTable.Restart()
 
     def register_scroll_updown_level(self, level):
         # This will automatically SetVisible the button if the table is too long
