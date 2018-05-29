@@ -101,11 +101,18 @@ class ScrollingTable():
         def get_row(self):
             return self._row
 
+        def get_row_data(self):
+            return self._parent_table.get_row_data_from_cell(self)
+
         def get_value(self):
             return self._Text
 
         def get_button(self):
             return self._btn
+
+        def get_header(self):
+            index = self.get_col()
+            self._parent_table._table_header_order.copy()[index]
 
         @property
         def State(self):
