@@ -111,8 +111,11 @@ class ScrollingTable():
             return self._btn
 
         def get_header(self):
+            print('get_header')
             index = self.get_col()
-            self._parent_table._table_header_order.copy()[index]
+            print('index=', index)
+            print('self._parent_table._table_header_order=', self._parent_table._table_header_order)
+            return self._parent_table._table_header_order.copy()[index]
 
         @property
         def State(self):
