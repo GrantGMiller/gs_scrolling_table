@@ -750,6 +750,12 @@ class ScrollingTable():
         self._data_rows = SortListDictByKey(self._data_rows, key, reverse)
         self._waitUpdateTable.Restart()
 
+    def sort_by_column_name(self, colName, reverse=False):
+        '''
+        '''
+        self._data_rows = SortListDictByKey(self._data_rows, colName, reverse)
+        self._waitUpdateTable.Restart()
+
     def register_scroll_updown_level(self, level):
         # This will automatically SetVisible the button if the table is too long
         # level = extronlib.ui.Level
