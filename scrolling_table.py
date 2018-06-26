@@ -130,6 +130,7 @@ class ScrollingTable():
         This class represents a spreadsheet with many cells.
         The cells will be filled with data and scrollable on a TLP.
         '''
+        self._initialized = False
         self._header_btns = []
         self._cells = []
         self._data_rows = []  # list of dicts. each list element is a row of data. represents the full spreadsheet.
