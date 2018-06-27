@@ -1,7 +1,7 @@
 try:
-    from extronlib_pro import Wait
+    from extronlib_pro import Wait, ProgramLog
 except:
-    from extronlib.system import Wait
+    from extronlib.system import Wait, ProgramLog
 from extronlib import event
 
 debug = False
@@ -52,7 +52,7 @@ class ScrollingTable():
                                                                                                 self._btnNewCallbacks))
 
                 # Handle Mutually exclusive cells
-                if self._parent_table._rowMutex == True:
+                if self._parent_table._rowMutex is True:
                     self._parent_table._rowMutexSelectedRow = self._row + self._parent_table._current_row_offset
                     self._parent_table._update_table()
 
@@ -249,6 +249,8 @@ class ScrollingTable():
         :return:
         '''
         self._rowMutex = state
+        if self._stateRules.get(True, None) is None:
+            ProgramLog('Dont forget to use AddSelectedStateRule() and AddNotSelectedStateRule()', 'info')
 
     def _DictContains(self, superDict, subDict):
         # Returns True if superDict contains all the key/values of subDict
@@ -1058,7 +1060,6 @@ def SortListOfDictsByKeys(aList, sortKeys=None, reverse=False):
         subList[sortKey] = l
 
     # now all the sublist are sorted by their respective keys
-
 
     def contains(d, subD):
         # print('contains d={}, subD={}'.format(d, subD))
