@@ -28,6 +28,7 @@ class ScrollingTable():
             self._row = row
             self._col = col
             self._btn = btn
+            self._width = 1  # width will SetVisible(False) cells to the right. width=1 means this cell takes up one space and no other cells will be hidden
             self._btnNewCallbacks = {
                 'Pressed': pressedCallback,
                 'Tapped': tappedCallback,
@@ -92,6 +93,7 @@ class ScrollingTable():
                 self._btn.SetState(State)
 
         def SetVisible(self, state):
+            print('SetVisible', state, 'self=', self)
             if self._btn.Visible is not state:
                 self._btn.SetVisible(state)
 
@@ -111,18 +113,18 @@ class ScrollingTable():
             return self._btn
 
         def get_header(self):
-            print('get_header')
+            #print('get_header')
             index = self.get_col()
-            print('index=', index)
-            print('self._parent_table._table_header_order=', self._parent_table._table_header_order)
-            return self._parent_table._table_header_order.copy()[index]
+            #print('index=', index)
+            #print('self._parent_table._table_header_order=', self._parent_table._table_header_order)
+            return self._parent_table._table_header_order.copy()[self._parent_table._current_col_offset + index]
 
         @property
         def State(self):
             return self._btn.State
 
         def __str__(self):
-            return 'Cell Object:\nrow={}\ncol={}\nvalue={}\nbtn={}'.format(self._row, self._col, self._Text, self._btn)
+            return '<Cell Object: row={}, col={}, value={}, btn={}>'.format(self._row, self._col, self._Text, self._btn)
 
     # class ********************************************************************
     def __init__(self):
@@ -131,6 +133,7 @@ class ScrollingTable():
         The cells will be filled with data and scrollable on a TLP.
         '''
         self._initialized = False
+        self._tableChangedCallback = None
         self._header_btns = []
         self._cells = []
         self._data_rows = []  # list of dicts. each list element is a row of data. represents the full spreadsheet.
@@ -235,6 +238,14 @@ class ScrollingTable():
         for cell in self._cells:
             cell._btnNewCallbacks['Released'] = func
 
+    @property
+    def TabledChanged(self):
+        return self._tableChangedCallback
+
+    @TabledChanged.setter
+    def TableChanged(self, func):
+        self._tableChangedCallback = func
+
     def HideEmptyRows(self, state):
         self._hideEmptyRows = state
 
@@ -252,6 +263,17 @@ class ScrollingTable():
         if self._stateRules.get(True, None) is None:
             ProgramLog('Dont forget to use AddSelectedStateRule() and AddNotSelectedStateRule()', 'info')
 
+    def GetSelectedRow(self):
+        return self._data_rows[self._rowMutexSelectedRow].copy()
+
+    def GetRowByRowNumber(self, rowNum):
+        # this returns the dict for the viewable row rowNum
+        print('rowNum=', rowNum)
+        print('self._current_row_offset + rowNum=', self._current_row_offset + rowNum)
+        print('len(self._data_rows)=', len(self._data_rows))
+        if self._current_row_offset + rowNum < len(self._data_rows):
+            return self._data_rows[self._current_row_offset + rowNum].copy()
+
     def _DictContains(self, superDict, subDict):
         # Returns True if superDict contains all the key/values of subDict
         all_keys_match = True
@@ -267,6 +289,8 @@ class ScrollingTable():
         return all_keys_match
 
     def GetRowNumber(self, searchRow):
+        # searchRow is {}
+        # must match exact row
         for rowNumber, row in enumerate(self.get_row_data()):
             if row == searchRow:
                 return rowNumber
@@ -359,6 +383,9 @@ class ScrollingTable():
     def add_new_row_data(self, row_dict):
         '''example:
         ScrollingTable.register_data_row({'key1':'value1', 'key2':'value2', ...})
+        There are special values including:
+        <width {}> - will SetVisible(False) on width cells to the right - this allows you to give the illusion taht a cell is wider than a single cell
+            {} is the header name
         '''
         print('ScrollingTable.add_new_row_data(row_dict={})'.format(row_dict))
         self._data_rows.append(row_dict)
@@ -641,6 +668,23 @@ class ScrollingTable():
                                         pass
                                 else:
                                     cell.SetState(self._stateRules[None])
+
+                    # Set the <width>... hide cells to right if width > 1
+
+                    # widthKey = '<width {}>'.format(cell.get_header())
+                    # if widthKey in row_dict:
+                    #     if row_dict[widthKey] > 1:
+                    #         for i in range(row_dict[widthKey]-1):
+                    #             nextCellColNum = cell.get_col() + i
+                    #             print('670 row_dict=', row_dict)
+                    #             print('this cell col=', cell.get_col)
+                    #             print('next cell col=', nextCellColNum)
+                    #             self.GetCell(cell.get_row(), nextCellColNum).SetVisible(False)
+                    #     else:
+                    #         cellToRight = self.GetCell(cell.get_row(), cell.get_col()+1)
+                    #         if cellToRight is not None:
+                    #             cellToRight.SetVisible(True)
+
                 else:
                     # no data for this cell
                     cell.SetText('')
@@ -670,6 +714,53 @@ class ScrollingTable():
                     text = self._table_header_order[headerTextIndex]
                     headerButton.SetText(text)
 
+            self._SetCellWidthVisiblity()
+
+            # Notify the user that a change has been applied to the table
+            if callable(self._tableChangedCallback):
+                self._tableChangedCallback()
+
+    def _SetCellWidthVisiblity(self):
+        print('_SetCellWidthVisiblity')
+        for rowNum in range(self._max_height):
+            rowDict = self.GetRowByRowNumber(rowNum)
+            if rowDict is not None:
+                skip = 0
+                for colNum in range(self._max_width):
+                    print('727 rowNum={}, colNum={}'.format(rowNum, colNum))
+                    if skip > 0:
+                        print('skip rowNum={}, colNum={}'.format(rowNum, colNum))
+                        skip -= 1
+                        continue
+
+                    cell = self.GetCell(rowNum, colNum)
+                    widthKey = '<width {}>'.format(cell.get_header())
+                    print('widthKey=', widthKey, ', rowDict=', rowDict)
+                    if widthKey in rowDict:
+                        cellWidth = rowDict[widthKey]
+                        print('cellWidth=', cellWidth)
+                        if cellWidth > 1:
+                            skip = cellWidth - 1
+                            # hide cells to right
+                            for i in range(1, cellWidth):
+                                nextCellColNum = cell.get_col() + i
+                                if nextCellColNum < self._max_width:
+                                    print('670 row_dict=', rowDict)
+                                    print('this cell col=', cell.get_col())
+                                    print('next cell col=', nextCellColNum)
+                                    self.GetCell(cell.get_row(), nextCellColNum).SetVisible(False)
+                        else:
+                            print('749 else')
+                            cell.SetVisible(True)
+                    else:
+                        print('752 else')
+                        #assume width of 1
+                        cell.SetVisible(True)
+
+            else: # rowDict is None
+                # assume width of 1
+                cell.SetVisible(True)
+
     def get_column_buttons(self, col_number):
         # returns all buttons in the column.
         # Note: they may not be in order
@@ -687,6 +778,12 @@ class ScrollingTable():
                 return cell._row
 
         raise Exception('Button {} not found in table'.format(button))
+
+    def GetCell(self, rowNum, colNum):
+        for cell in self._cells:
+            if cell.get_col() == colNum:
+                if cell.get_row() == rowNum:
+                    return cell
 
     def get_cell_value(self, row_number, col_number):
         print('ScrollingTable.get_cell_value(row_number={}, col_number={})'.format(row_number, col_number))
