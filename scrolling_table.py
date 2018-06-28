@@ -113,10 +113,10 @@ class ScrollingTable():
             return self._btn
 
         def get_header(self):
-            #print('get_header')
+            # print('get_header')
             index = self.get_col()
-            #print('index=', index)
-            #print('self._parent_table._table_header_order=', self._parent_table._table_header_order)
+            # print('index=', index)
+            # print('self._parent_table._table_header_order=', self._parent_table._table_header_order)
             return self._parent_table._table_header_order.copy()[self._parent_table._current_col_offset + index]
 
         @property
@@ -669,22 +669,6 @@ class ScrollingTable():
                                 else:
                                     cell.SetState(self._stateRules[None])
 
-                    # Set the <width>... hide cells to right if width > 1
-
-                    # widthKey = '<width {}>'.format(cell.get_header())
-                    # if widthKey in row_dict:
-                    #     if row_dict[widthKey] > 1:
-                    #         for i in range(row_dict[widthKey]-1):
-                    #             nextCellColNum = cell.get_col() + i
-                    #             print('670 row_dict=', row_dict)
-                    #             print('this cell col=', cell.get_col)
-                    #             print('next cell col=', nextCellColNum)
-                    #             self.GetCell(cell.get_row(), nextCellColNum).SetVisible(False)
-                    #     else:
-                    #         cellToRight = self.GetCell(cell.get_row(), cell.get_col()+1)
-                    #         if cellToRight is not None:
-                    #             cellToRight.SetVisible(True)
-
                 else:
                     # no data for this cell
                     cell.SetText('')
@@ -734,30 +718,32 @@ class ScrollingTable():
                         continue
 
                     cell = self.GetCell(rowNum, colNum)
-                    widthKey = '<width {}>'.format(cell.get_header())
-                    print('widthKey=', widthKey, ', rowDict=', rowDict)
-                    if widthKey in rowDict:
-                        cellWidth = rowDict[widthKey]
-                        print('cellWidth=', cellWidth)
-                        if cellWidth > 1:
-                            skip = cellWidth - 1
-                            # hide cells to right
-                            for i in range(1, cellWidth):
-                                nextCellColNum = cell.get_col() + i
-                                if nextCellColNum < self._max_width:
-                                    print('670 row_dict=', rowDict)
-                                    print('this cell col=', cell.get_col())
-                                    print('next cell col=', nextCellColNum)
-                                    self.GetCell(cell.get_row(), nextCellColNum).SetVisible(False)
+                    if cell is not None:
+                        widthKey = '<width {}>'.format(cell.get_header())
+                        print('widthKey=', widthKey, ', rowDict=', rowDict)
+                        if widthKey in rowDict:
+                            cellWidth = rowDict[widthKey]
+                            print('cellWidth=', cellWidth)
+                            if cellWidth > 1:
+                                skip = cellWidth - 1
+                                # hide cells to right
+                                for i in range(1, cellWidth):
+                                    nextCellColNum = cell.get_col() + i
+                                    if nextCellColNum < self._max_width:
+                                        print('670 row_dict=', rowDict)
+                                        print('this cell col=', cell.get_col())
+                                        print('next cell col=', nextCellColNum)
+                                        self.GetCell(cell.get_row(), nextCellColNum).SetVisible(False)
+                            else:
+                                print('749 else')
+                                cell.SetVisible(True)
                         else:
-                            print('749 else')
+                            print('752 else')
+                            # assume width of 1
                             cell.SetVisible(True)
-                    else:
-                        print('752 else')
-                        #assume width of 1
-                        cell.SetVisible(True)
 
-            else: # rowDict is None
+
+            else:  # rowDict is None
                 # assume width of 1
                 cell.SetVisible(True)
 
