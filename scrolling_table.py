@@ -28,7 +28,6 @@ class ScrollingTable():
             self._row = row
             self._col = col
             self._btn = btn
-            self._width = 1  # width will SetVisible(False) cells to the right. width=1 means this cell takes up one space and no other cells will be hidden
             self._btnNewCallbacks = {
                 'Pressed': pressedCallback,
                 'Tapped': tappedCallback,
@@ -133,6 +132,7 @@ class ScrollingTable():
         The cells will be filled with data and scrollable on a TLP.
         '''
         self._initialized = False
+        self._talbeHasCellWidth = False
         self._tableChangedCallback = None
         self._header_btns = []
         self._cells = []
@@ -388,11 +388,22 @@ class ScrollingTable():
             {} is the header name
         '''
         print('ScrollingTable.add_new_row_data(row_dict={})'.format(row_dict))
+
+        if not self._talbeHasCellWidth:
+            for key in row_dict:
+                if key.startswith('<width'):
+                    self._talbeHasCellWidth = True
+
         self._data_rows.append(row_dict)
 
         for key in row_dict:
             if key not in self._table_header_order:
-                self._table_header_order.append(key)
+                if self._talbeHasCellWidth:
+                    if not key.startswith('<width'):
+                        # dont add headers with the special "<width..." key
+                        self._table_header_order.append(key)
+                else:
+                    self._table_header_order.append(key)
 
         self.IsScrollable()
         self._initialized = True  # assuming that if the user is adding data to the table, then they are done setting up the table
@@ -698,7 +709,8 @@ class ScrollingTable():
                     text = self._table_header_order[headerTextIndex]
                     headerButton.SetText(text)
 
-            self._SetCellWidthVisiblity()
+            if self._talbeHasCellWidth:
+                self._SetCellWidthVisiblity()
 
             # Notify the user that a change has been applied to the table
             if callable(self._tableChangedCallback):
