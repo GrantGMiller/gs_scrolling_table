@@ -332,6 +332,10 @@ class ScrollingTable():
 
         self._waitUpdateTable.Restart()
 
+    def SetTableHeaderOrder(self, header_list=None):
+        # for backwards compatibility
+        return self.set_table_header_order(header_list)
+
     def register_header_buttons(self, *args):
         '''
         example: ScrollingTable.register_header_buttons(Button(TLP, 1), Button(TLP, 2) )
@@ -351,6 +355,9 @@ class ScrollingTable():
                 self.sort_by_column(index)
 
         self._waitUpdateTable.Restart()
+
+    def RegisterHeaderButtons(self, *a, **k):
+        return self.register_header_buttons(*a, **k)
 
     def GetRowSize(self):
         # Return how tall the table is (the max num of rows that can be displayed at once
@@ -409,6 +416,9 @@ class ScrollingTable():
         self._initialized = True  # assuming that if the user is adding data to the table, then they are done setting up the table
         self._waitUpdateTable.Restart()
 
+    def AddNewRowData(self, *a, **k):
+        return self.add_new_row_data(*a, **k)
+
     def ClearMutex(self):
         if self._rowMutex is True:
             for cell in self._cells:
@@ -457,6 +467,9 @@ class ScrollingTable():
 
         self.IsScrollable()
         self._waitUpdateTable.Restart()
+
+    def UpdateRowData(self, *a, **k):
+        return self.update_row_data(*a, **k)
 
     # Manipulating the table data************************************************
 
@@ -511,6 +524,9 @@ class ScrollingTable():
 
         self.IsScrollable()
         self._update_table()
+
+    def DeleteRow(self, where_dict):
+        return self.delete_row(where_dict)
 
     def register_cell(self, *args, **kwargs):
         NewCell = self.Cell(self, *args, **kwargs)
@@ -824,6 +840,9 @@ class ScrollingTable():
                 result.append(row)
 
         return result
+
+    def GetRowData(self, where_dict=None):
+        return self.get_row_data(where_dict)
 
     def reset_scroll(self):
         self._current_row_offset = 0
