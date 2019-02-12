@@ -369,6 +369,9 @@ class ScrollingTable():
         self._find_max_row_col()
         return self._max_width
 
+    def RegisterRowButtons(self, *a, **k):
+        return self.register_row_buttons(*a, **k)
+
     def register_row_buttons(self, row_number, *args):
         ''' *args = tuple of Button objects
         example:
@@ -424,6 +427,9 @@ class ScrollingTable():
             for cell in self._cells:
                 cell.SetState(0)
         self._rowMutexSelectedRow = None
+
+    def ClearAllData(self):
+        return self.clear_all_data()
 
     def clear_all_data(self):
         print('ScrollingTable.clear_all_data()')
@@ -552,6 +558,9 @@ class ScrollingTable():
 
         print('_find_max_row_col new_width={}, new_height={}'.format(self._max_width, self._max_height))
 
+    def ScrollUp(self):
+        return self.scroll_up()
+
     def scroll_up(self):
         print('ScrollingTable.scroll_up(self={})'.format(self))
         print('self._current_row_offset=', self._current_row_offset)
@@ -560,6 +569,9 @@ class ScrollingTable():
             self._current_row_offset = 0
 
         self._update_table()
+
+    def ScrollDown(self):
+        return self.scroll_down()
 
     def scroll_down(self):
         print('ScrollingTable.scroll_down(self={})'.format(self))
@@ -873,18 +885,30 @@ class ScrollingTable():
         self._data_rows = SortListDictByKey(self._data_rows, colName, reverse)
         self._waitUpdateTable.Restart()
 
+    def RegisterScrollUpDownLevel(self, level):
+        return self.register_scroll_updown_level(level)
+
     def register_scroll_updown_level(self, level):
         # This will automatically SetVisible the button if the table is too long
         # level = extronlib.ui.Level
         self._scroll_updown_level = level
 
+    def RegisterScrollUpButton(self, button):
+        return self.register_scroll_up_button(button)
+
     def register_scroll_up_button(self, button):
         # This will automatically SetVisible the button if the table is too long
         self._scroll_up_button = button
 
+    def RegisterScrollDownButton(self, button):
+        return self.register_scroll_down_button(button)
+
     def register_scroll_down_button(self, button):
         # This will automatically SetVisible the button if the table is too long
         self._scroll_down_button = button
+
+    def RegisterScrollUpDownLabel(self, label):
+        return self.register_scroll_updown_label(label)
 
     def register_scroll_updown_label(self, label):
         # This will automatically SetVisible the button if the table is too long
