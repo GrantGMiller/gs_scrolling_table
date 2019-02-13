@@ -9,9 +9,9 @@ if not debug:
     print = lambda *a, **k: None  # disable print statements
 
 
-class ScrollingTable():
+class ScrollingTable:
     # helper class Cell()**************************************************************
-    class Cell():
+    class Cell:
         '''
         Represents a single cell in a scrolling table
         '''
@@ -101,6 +101,9 @@ class ScrollingTable():
 
         def get_row(self):
             return self._row
+
+        def GetRowData(self):
+            return self.get_row_data()
 
         def get_row_data(self):
             return self._parent_table.get_row_data_from_cell(self)
