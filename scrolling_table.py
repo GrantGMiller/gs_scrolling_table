@@ -108,6 +108,9 @@ class ScrollingTable:
         def get_row_data(self):
             return self._parent_table.get_row_data_from_cell(self)
 
+        def GetValue(self):
+            return self._Text
+
         def get_value(self):
             return self._Text
 
@@ -171,7 +174,7 @@ class ScrollingTable:
             # None: int(state), # None is for the 'default' state, which may not exists
             # True: int(state), # State when row is selected
         }
-
+        self._selectedTextState = {}
         # _cell_pressed_callback should accept 2 params; the scrolling table object, and the cell object
 
         # This controls how often the table UI gets updated. 0.2 seconds means the TLP has a  max refresh of 5 times per second.
@@ -561,22 +564,22 @@ class ScrollingTable:
 
         print('_find_max_row_col new_width={}, new_height={}'.format(self._max_width, self._max_height))
 
-    def ScrollUp(self):
-        return self.scroll_up()
+    def ScrollUp(self, *a, **k):
+        return self.scroll_up(*a, **k)
 
-    def scroll_up(self):
+    def scroll_up(self, count=1):
         print('ScrollingTable.scroll_up(self={})'.format(self))
         print('self._current_row_offset=', self._current_row_offset)
-        self._current_row_offset -= 1
+        self._current_row_offset -= count
         if self._current_row_offset < 0:
             self._current_row_offset = 0
 
         self._update_table()
 
-    def ScrollDown(self):
-        return self.scroll_down()
+    def ScrollDown(self, *a, **k):
+        return self.scroll_down(*a, **k)
 
-    def scroll_down(self):
+    def scroll_down(self, count=1):
         print('ScrollingTable.scroll_down(self={})'.format(self))
         print('self._current_row_offset=', self._current_row_offset)
         print('self._max_height=', self._max_height)
@@ -588,7 +591,7 @@ class ScrollingTable:
             max_offset = 0
         print('max_offset=', max_offset)
 
-        self._current_row_offset += 1
+        self._current_row_offset += count
         if self._current_row_offset > max_offset:
             self._current_row_offset = max_offset
 
@@ -669,7 +672,19 @@ class ScrollingTable:
                     cell.SetText(cell_text)
 
                     # Set the state if applicable
-                    if cell_text in self._stateRules:
+                    if cell_text in self._selectedTextState:
+                        if self._rowMutexSelectedRow is None:
+                            if isinstance(self._selectedTextState[cell_text], list):
+                                cell.SetBlinking('Slow', self._selectedTextState[cell_text])
+                            else:
+                                cell.SetState(self._selectedTextState[cell_text])
+
+                        else:
+                            # row mutex is True
+                            # this should not happen
+                            pass
+
+                    elif cell_text in self._stateRules:
                         if self._rowMutexSelectedRow is None:
                             if isinstance(self._stateRules[cell_text], list):
                                 cell.SetBlinking('Slow', self._stateRules[cell_text])
@@ -692,6 +707,7 @@ class ScrollingTable:
                                     cell.SetBlinking('Slow', self._stateRules[cell_text])
                                 else:
                                     cell.SetState(self._stateRules[cell_text])
+
                     else:
                         # This text is not in the _stateRules
                         if None in self._stateRules:
@@ -987,6 +1003,18 @@ class ScrollingTable:
 
             if self._scroll_leftright_label is not None:
                 self._scroll_leftright_label.SetVisible(False)
+
+    def AddSelectedTextStateRule(self, text, state):
+        self._selectedTextState[text] = state
+        self._update_table()
+
+    def RemoveSelectedTextStateRule(self, text):
+        self._selectedTextState.pop(text, None)
+        self._update_table()
+
+    def ClearSelectedTextStateRules(self):
+        self._selectedTextState = {}
+        self._update_table()
 
     def AddNotSelectedTextStateRule(self, text, state):
         '''
