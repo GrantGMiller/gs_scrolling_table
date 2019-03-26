@@ -83,11 +83,13 @@ class ScrollingTable:
                     NewScrollTableHandler(button, state)
 
         def SetText(self, text):
+            print('SetText', text, 'self=', self)
             if self._Text is not text:
                 self._btn.SetText(text)
                 self._Text = text
 
         def SetState(self, State):
+            print('SetState', State, 'self=', self)
             if self._btn.State is not State:
                 self._btn.SetState(State)
 
@@ -303,7 +305,7 @@ class ScrollingTable:
 
     def ForceRowMutex(self, whereDict):
         # Force the table to highlight the row that contains whereDict
-        print('ForceRowMutex(whereDict=', whereDict, 'beforeMutex=', self._rowMutexSelectedRow)
+        print('306 ForceRowMutex(whereDict=', whereDict, 'beforeMutex=', self._rowMutexSelectedRow)
         for rowNumber, rowData in enumerate(self.get_row_data()):
             if self._DictContains(superDict=rowData, subDict=whereDict):
                 self._rowMutexSelectedRow = rowNumber
@@ -315,7 +317,7 @@ class ScrollingTable:
 
         self._waitUpdateTable.Restart()
 
-        print('afterMutex=', self._rowMutexSelectedRow)
+        print('318 afterMutex=', self._rowMutexSelectedRow)
 
     def set_table_header_order(self, header_list=None):
         # header_list example: ['IP Address', 'Port']
@@ -628,7 +630,7 @@ class ScrollingTable:
 
     def _update_table(self):
         if self._initialized and not self._freeze:
-            print('ScrollingTable._update_table()')
+            print('631 ScrollingTable._update_table()')
             print('self._current_row_offset=', self._current_row_offset)
             print('self._rowMutexSelectedRow=', self._rowMutexSelectedRow)
             print('self._rowMutex=', self._rowMutex)
@@ -637,16 +639,18 @@ class ScrollingTable:
             for cell in self._cells:
 
                 data_row_index = cell._row + self._current_row_offset
-                print('cell._row={}, data_row_index={}'.format(cell._row, data_row_index))
+                print('640 cell._row={}, data_row_index={}'.format(cell._row, data_row_index))
 
                 # Is there data for this cell to display?
                 if data_row_index < len(self._data_rows):
+                    print('644 data_row_index=', data_row_index)
                     # Yes there is data for this cell to display
                     cell.SetVisible(True)
 
                     row_dict = self._data_rows[data_row_index]
                     # row_dict holds the data for this row
-                    print('cell._row={}\ndata_row_index={}\nrow_dict={}'.format(cell._row, data_row_index, row_dict))
+                    print(
+                        '649 cell._row={}\ndata_row_index={}\nrow_dict={}'.format(cell._row, data_row_index, row_dict))
 
                     col_header_index = cell._col + self._current_col_offset
                     # col_header_index is int() base 0 (left most col is 0)
@@ -673,6 +677,7 @@ class ScrollingTable:
 
                     # Set the state if applicable
                     if cell_text in self._selectedTextState:
+                        print('676 self._rowMutexSelectedRow=', self._rowMutexSelectedRow)
                         if self._rowMutexSelectedRow is None:
                             if isinstance(self._selectedTextState[cell_text], list):
                                 cell.SetBlinking('Slow', self._selectedTextState[cell_text])
@@ -685,6 +690,7 @@ class ScrollingTable:
                             pass
 
                     elif cell_text in self._stateRules:
+                        print('688 self._rowMutexSelectedRow=', self._rowMutexSelectedRow)
                         if self._rowMutexSelectedRow is None:
                             if isinstance(self._stateRules[cell_text], list):
                                 cell.SetBlinking('Slow', self._stateRules[cell_text])
@@ -710,8 +716,10 @@ class ScrollingTable:
 
                     else:
                         # This text is not in the _stateRules
+                        print('716 self._stateRules=', self._stateRules)
                         if None in self._stateRules:
                             # A Default state exists
+                            print('715 self._rowMutexSelectedRow=', self._rowMutexSelectedRow)
                             if self._rowMutexSelectedRow is None:
                                 cell.SetState(self._stateRules[None])
                             else:
@@ -727,7 +735,19 @@ class ScrollingTable:
                                 else:
                                     cell.SetState(self._stateRules[None])
 
+                        else:
+                            print('735')
+                            # there are no stateRules, assume 0=nsel, 1=sel
+                            if self._rowMutexSelectedRow is None:
+                                cell.SetState(0)
+                            else:  # _rowMutexSelectedRow = int(selected)
+                                if cell.get_row() + self._current_row_offset == self._rowMutexSelectedRow:
+                                    cell.SetState(1)
+                                else:
+                                    cell.SetState(0)
+
                 else:
+                    print('748 no data for this cell', cell)
                     # no data for this cell
                     cell.SetText('')
 
