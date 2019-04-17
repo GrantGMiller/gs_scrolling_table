@@ -899,6 +899,9 @@ class ScrollingTable:
         self._current_row_offset = 0
         self._update_table()
 
+    def ResetScroll(self):
+        self.reset_scroll()
+
     def sort_by_column_list(self, colNumberList, reverse=False):
         colHeaderList = []
         for colNumber in colNumberList:
@@ -923,6 +926,9 @@ class ScrollingTable:
         '''
         self._data_rows = SortListDictByKey(self._data_rows, colName, reverse)
         self._waitUpdateTable.Restart()
+
+    def SortyByColumnName(self, *a, **k):
+        self.sort_by_column_name(*a, **k)
 
     def RegisterScrollUpDownLevel(self, level):
         return self.register_scroll_updown_level(level)
