@@ -486,6 +486,8 @@ class ScrollingTable:
         return self.update_row_data(*a, **k)
 
     # Manipulating the table data************************************************
+    def HasRow(self, where_dict):
+        self.has_row(where_dict)
 
     def has_row(self, where_dict):
         print('ScrollingTable.has_row(where_dict={})'.format(where_dict))
@@ -927,7 +929,7 @@ class ScrollingTable:
         self._data_rows = SortListDictByKey(self._data_rows, colName, reverse)
         self._waitUpdateTable.Restart()
 
-    def SortyByColumnName(self, *a, **k):
+    def SortByColumnName(self, *a, **k):
         self.sort_by_column_name(*a, **k)
 
     def RegisterScrollUpDownLevel(self, level):
