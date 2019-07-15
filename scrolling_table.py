@@ -3,10 +3,19 @@ try:
 except:
     from extronlib.system import Wait, ProgramLog
 from extronlib import event
+import time
 
-debug = False
-if not debug:
+DEBUG = False
+oldPrint = print
+if not DEBUG:
     print = lambda *a, **k: None  # disable print statements
+else:
+    def NewPrint(*a, **k):
+        oldPrint(*a, **k)
+        time.sleep(0.001)
+
+
+    print = NewPrint
 
 
 class ScrollingTable:
@@ -487,7 +496,7 @@ class ScrollingTable:
 
     # Manipulating the table data************************************************
     def HasRow(self, where_dict):
-        self.has_row(where_dict)
+        return self.has_row(where_dict)
 
     def has_row(self, where_dict):
         print('ScrollingTable.has_row(where_dict={})'.format(where_dict))
@@ -1042,6 +1051,11 @@ class ScrollingTable:
 
     def ClearSelectedTextStateRules(self):
         self._selectedTextState = {}
+        self._update_table()
+
+    def ClearAllStateRules(self):
+        self._selectedTextState = {}
+        self._stateRules = {}
         self._update_table()
 
     def AddNotSelectedTextStateRule(self, text, state):
