@@ -263,6 +263,9 @@ class ScrollingTable:
     def TableChanged(self, func):
         self._tableChangedCallback = func
 
+    def SetUpdateDelay(self, t):
+        self._waitUpdateTable = Wait(t, self._update_table)
+
     def HideEmptyRows(self, state):
         self._hideEmptyRows = state
 
@@ -445,10 +448,10 @@ class ScrollingTable:
                 cell.SetState(0)
         self._rowMutexSelectedRow = None
 
-    def ClearAllData(self):
-        return self.clear_all_data()
+    def ClearAllData(self, forceRefresh=False):
+        return self.clear_all_data(forceRefresh)
 
-    def clear_all_data(self):
+    def clear_all_data(self, forceRefresh=False):
         print('ScrollingTable.clear_all_data()')
         self._data_rows = []
         self.reset_scroll()
@@ -456,7 +459,11 @@ class ScrollingTable:
         self.ClearMutex()
 
         self.IsScrollable()
-        self._update_table()
+
+        if forceRefresh:
+            self._update_table()
+        else:
+            self._waitUpdateTable.Restart()
 
     def update_row_data(self, where_dict, replace_dict):
         '''
@@ -906,9 +913,12 @@ class ScrollingTable:
     def GetRowData(self, where_dict=None):
         return self.get_row_data(where_dict)
 
-    def reset_scroll(self):
+    def reset_scroll(self, forceUpdate=False):
         self._current_row_offset = 0
-        self._update_table()
+        if forceUpdate:
+            self._update_table()
+        else:
+            self._waitUpdateTable.Restart()
 
     def ResetScroll(self):
         self.reset_scroll()
