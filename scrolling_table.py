@@ -923,6 +923,16 @@ class ScrollingTable:
     def ResetScroll(self):
         self.reset_scroll()
 
+    def SortCustom(self, func):
+        '''
+
+        :param func: function compatible with the sorted(key=) builtin
+        :return:
+        '''
+        oldData = self._data_rows.copy()
+        newData = sorted(oldData, key=func)
+        self._data_rows = newData
+
     def sort_by_column_list(self, colNumberList, reverse=False):
         colHeaderList = []
         for colNumber in colNumberList:
