@@ -1,3 +1,5 @@
+import extronlib
+
 try:
     from extronlib_pro import Wait, ProgramLog
 except:
@@ -778,7 +780,10 @@ class ScrollingTable:
             if self._scroll_updown_level:
                 max_row_offset = len(self._data_rows) - self._max_height
                 percent = toPercent(self._current_row_offset, 0, max_row_offset)
-                self._scroll_updown_level.SetLevel(percent)
+                if isinstance(self._scroll_updown_level, extronlib.ui.Level):
+                    self._scroll_updown_level.SetLevel(percent)
+                elif isinstance(self._scroll_updown_level, extronlib.ui.Slider):
+                    self._scroll_updown_level.SetFill(percent)
 
             # update scroll left/right controls
             if self._scroll_leftright_level:
@@ -962,7 +967,18 @@ class ScrollingTable:
         self.sort_by_column_name(*a, **k)
 
     def RegisterScrollUpDownLevel(self, level):
+        try:
+            if isinstance(level, extronlib.ui.Slider):
+                level.Changed = lambda s, value: self.SetScrollPercent(value)
+        except:
+            pass
         return self.register_scroll_updown_level(level)
+
+    def SetScrollPercent(self, percent):
+        total = len(self._data_rows)
+        index = total * (percent / 100)
+        self._current_row_offset = index
+        self._update_table()
 
     def register_scroll_updown_level(self, level):
         # This will automatically SetVisible the button if the table is too long
