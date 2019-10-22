@@ -467,6 +467,15 @@ class ScrollingTable:
         else:
             self._waitUpdateTable.Restart()
 
+    def SetData(self, data):
+        '''
+        Clears out all old data and replaces it with this data
+        :param data: list of dicts
+        :return:
+        '''
+        self._data_rows = data
+        self._waitUpdateTable.Restart()
+
     def update_row_data(self, where_dict, replace_dict):
         '''
         Find a row in self._data_rows that containts all the key/value pairs from where_dict
@@ -913,7 +922,7 @@ class ScrollingTable:
                 # All the key/values from where_dict match row, update row with replace dict values
                 result.append(row)
 
-        return result
+        return result.copy()
 
     def GetRowData(self, where_dict=None):
         return self.get_row_data(where_dict)
