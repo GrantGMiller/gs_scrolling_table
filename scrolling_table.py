@@ -1090,6 +1090,9 @@ class ScrollingTable:
         self._selectedTextState[text] = state
         self._update_table()
 
+    def GetSelectedTextStateRules(self):
+        return self._selectedTextState.copy()
+
     def RemoveSelectedTextStateRule(self, text):
         self._selectedTextState.pop(text, None)
         self._update_table()
