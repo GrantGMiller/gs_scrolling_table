@@ -271,7 +271,7 @@ class ScrollingTable:
     def HideEmptyRows(self, state):
         self._hideEmptyRows = state
 
-    def SetRowMutex(self, state):
+    def SetRowMutex(self, state, showError=True):
         '''
         Setting this true will highlight a row when it is pressed.
         You can also use "ForceRowMutex" to highlight a row just once
@@ -282,7 +282,7 @@ class ScrollingTable:
         :return:
         '''
         self._rowMutex = state
-        if self._stateRules.get(True, None) is None:
+        if showError and self._stateRules.get(True, None) is None:
             ProgramLog('Dont forget to use AddSelectedStateRule() and AddNotSelectedStateRule()', 'info')
 
     def GetSelectedRow(self):
