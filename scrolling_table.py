@@ -978,14 +978,15 @@ class ScrollingTable:
     def RegisterScrollUpDownLevel(self, level):
         try:
             if isinstance(level, extronlib.ui.Slider):
-                level.Changed = lambda s, value: self.SetScrollPercent(value)
-        except:
-            pass
+                level.Changed = lambda _, __, value: self.SetScrollPercent(int(value))
+        except Exception as e:
+            ProgramLog('ScrollingTable Exception 983:{}'.format(e), 'error')
         return self.register_scroll_updown_level(level)
 
     def SetScrollPercent(self, percent):
         total = len(self._data_rows)
         index = total * (percent / 100)
+        index = int(index)
         self._current_row_offset = index
         self._update_table()
 
