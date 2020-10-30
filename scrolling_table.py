@@ -8,6 +8,7 @@ from extronlib import event
 import time
 
 DEBUG = False
+
 oldPrint = print
 if not DEBUG:
     print = lambda *a, **k: None  # disable print statements
@@ -545,8 +546,9 @@ class ScrollingTable:
         return False
 
     def delete_row(self, where_dict):
+        rowDeleted = False
         if not self.has_row(where_dict):
-            return
+            return rowDeleted
         else:
             for row in self._data_rows.copy():
                 # verify all the keys from where_dict are in row and the values match
@@ -564,9 +566,11 @@ class ScrollingTable:
                     # all keys match in this row. remove it
                     print('ScrollingTable.delete_row\nremoving row={}'.format(row))
                     self._data_rows.remove(row)
+                    rowDeleted = True
 
         self.IsScrollable()
         self._update_table()
+        return rowDeleted
 
     def DeleteRow(self, where_dict):
         return self.delete_row(where_dict)
@@ -934,8 +938,8 @@ class ScrollingTable:
         else:
             self._waitUpdateTable.Restart()
 
-    def ResetScroll(self):
-        self.reset_scroll()
+    def ResetScroll(self, *a, **k):
+        self.reset_scroll( *a, **k)
 
     def SortCustom(self, func):
         '''
