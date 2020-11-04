@@ -39,7 +39,7 @@ class ScrollingTable:
             self._parent_table = parent_table
             self._row = row
             self._col = col
-            self._btn = btn
+            self.button = btn
             self._btnNewCallbacks = {
                 'Pressed': pressedCallback,
                 'Tapped': tappedCallback,
@@ -48,14 +48,14 @@ class ScrollingTable:
                 'Released': releasedCallback,
             }
             self._Text = ''
-            self._btn.SetState(0)
+            self.button.SetState(0)
 
             self.oldHandlers = {
-                'Pressed': self._btn.Pressed,
-                'Tapped': self._btn.Tapped,
-                'Held': self._btn.Held,
-                'Repeated': self._btn.Repeated,
-                'Released': self._btn.Released,
+                'Pressed': self.button.Pressed,
+                'Tapped': self.button.Tapped,
+                'Held': self.button.Held,
+                'Repeated': self.button.Repeated,
+                'Released': self.button.Released,
             }
 
             def NewScrollTableHandler(button, state):
@@ -88,27 +88,27 @@ class ScrollingTable:
                     print('new handler done')
 
             for state in self.oldHandlers.keys():
-                print('Setting btn={}, state={}, func={}'.format(self._btn, state, NewScrollTableHandler))
+                print('Setting btn={}, state={}, func={}'.format(self.button, state, NewScrollTableHandler))
 
-                @event(self._btn, state)  # cant use setattr if using extronlib_pro :-(
+                @event(self.button, state)  # cant use setattr if using extronlib_pro :-(
                 def NewHandler53843(button, state):
                     NewScrollTableHandler(button, state)
 
         def SetText(self, text):
             print('SetText', text, 'self=', self)
             if self._Text is not text:
-                self._btn.SetText(text)
+                self.button.SetText(text)
                 self._Text = text
 
         def SetState(self, State):
             print('SetState', State, 'self=', self)
-            if self._btn.State is not State:
-                self._btn.SetState(State)
+            if self.button.State is not State:
+                self.button.SetState(State)
 
         def SetVisible(self, state):
             print('SetVisible', state, 'self=', self)
-            if self._btn.Visible is not state:
-                self._btn.SetVisible(state)
+            if self.button.Visible is not state:
+                self.button.SetVisible(state)
 
         def get_col(self):
             return self._col
@@ -129,7 +129,10 @@ class ScrollingTable:
             return self._Text
 
         def get_button(self):
-            return self._btn
+            return self.button
+
+        def GetHeader(self, *a, **k):
+            return self.get_header(*a, **k)
 
         def get_header(self):
             # print('get_header')
@@ -140,10 +143,11 @@ class ScrollingTable:
 
         @property
         def State(self):
-            return self._btn.State
+            return self.button.State
 
         def __str__(self):
-            return '<Cell Object: row={}, col={}, value={}, btn={}>'.format(self._row, self._col, self._Text, self._btn)
+            return '<Cell Object: row={}, col={}, value={}, btn={}>'.format(self._row, self._col, self._Text,
+                                                                            self.button)
 
     # class ********************************************************************
     def __init__(self):
@@ -189,6 +193,9 @@ class ScrollingTable:
             # True: int(state), # State when row is selected
         }
         self._selectedTextState = {}
+        self._customStateCallback = {
+            # str(header): func(cell),
+        }
         # _cell_pressed_callback should accept 2 params; the scrolling table object, and the cell object
 
         # This controls how often the table UI gets updated. 0.2 seconds means the TLP has a  max refresh of 5 times per second.
@@ -365,6 +372,7 @@ class ScrollingTable:
         '''
         self._header_btns = []
         for button in args:
+            button.SetVisible(True)
             self._header_btns.append(button)
 
         @event(self._header_btns, 'Pressed')
@@ -709,7 +717,12 @@ class ScrollingTable:
                     cell.SetText(cell_text)
 
                     # Set the state if applicable
-                    if cell_text in self._selectedTextState:
+                    header = cell.GetHeader()
+                    if header in self._customStateCallback:
+                        self._customStateCallback[header](
+                            cell)  # the use can set the state/text with cell.button.SetState(1) or cell.button.SetText('hi')
+
+                    elif cell_text in self._selectedTextState:
                         print('676 self._rowMutexSelectedRow=', self._rowMutexSelectedRow)
                         if self._rowMutexSelectedRow is None:
                             if isinstance(self._selectedTextState[cell_text], list):
@@ -869,13 +882,13 @@ class ScrollingTable:
 
         for cell in self._cells:
             if cell._col == col_number:
-                btn_list.append(cell._btn)
+                btn_list.append(cell.button)
 
         return btn_list
 
     def get_row_from_button(self, button):
         for cell in self._cells:
-            if cell._btn == button:
+            if cell.button == button:
                 return cell._row
 
         raise Exception('Button {} not found in table'.format(button))
@@ -939,7 +952,7 @@ class ScrollingTable:
             self._waitUpdateTable.Restart()
 
     def ResetScroll(self, *a, **k):
-        self.reset_scroll( *a, **k)
+        self.reset_scroll(*a, **k)
 
     def SortCustom(self, func):
         '''
@@ -1090,6 +1103,9 @@ class ScrollingTable:
 
             if self._scroll_leftright_label is not None:
                 self._scroll_leftright_label.SetVisible(False)
+
+    def AddCustomRule(self, column, func):
+        self._customStateCallback[column] = func
 
     def AddSelectedTextStateRule(self, text, state):
         self._selectedTextState[text] = state
