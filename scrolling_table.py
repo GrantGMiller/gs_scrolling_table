@@ -139,7 +139,10 @@ class ScrollingTable:
             index = self.get_col()
             # print('index=', index)
             # print('self._parent_table._table_header_order=', self._parent_table._table_header_order)
-            return self._parent_table._table_header_order.copy()[self._parent_table._current_col_offset + index]
+            try:
+                return self._parent_table._table_header_order.copy()[self._parent_table._current_col_offset + index]
+            except:
+                return None
 
         @property
         def State(self):
