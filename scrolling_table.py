@@ -964,7 +964,12 @@ class ScrollingTable:
         :return:
         '''
         oldData = self._data_rows.copy()
-        newData = sorted(oldData, key=func)
+
+        try:
+            newData = func(oldData)
+        except:
+            newData = sorted(oldData, key=func)
+
         self._data_rows = newData
 
     def sort_by_column_list(self, colNumberList, reverse=False):
