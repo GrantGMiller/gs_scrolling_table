@@ -148,6 +148,20 @@ class ScrollingTable:
         def State(self):
             return self.button.State
 
+        def GetRowIndex(self):
+            '''
+            :return: int > the index of the row in the table
+            '''
+            return self._parent_table.GetRowNumber(self.GetRowData())
+
+        def GetRowIndexOffset(self):
+            '''
+
+            :return: int > the index of the row on the screen, so 0 would mean its the top row on the UI
+            '''
+            rowIndex = self.GetRowIndex()
+            return rowIndex - self._parent_table._current_row_offset
+
         def __str__(self):
             return '<Cell Object: row={}, col={}, value={}, btn={}>'.format(self._row, self._col, self._Text,
                                                                             self.button)
@@ -204,6 +218,8 @@ class ScrollingTable:
         # This controls how often the table UI gets updated. 0.2 seconds means the TLP has a  max refresh of 5 times per second.
         self._waitUpdateTable = Wait(0.2, self._update_table)
         self._waitUpdateTable.Cancel()
+
+        self._numOfBufferRows = 0
 
         self._initialized = False
 
@@ -279,8 +295,10 @@ class ScrollingTable:
     def SetUpdateDelay(self, t):
         self._waitUpdateTable = Wait(t, self._update_table)
 
-    def HideEmptyRows(self, state):
+    def HideEmptyRows(self, state, refresh=True):
         self._hideEmptyRows = state
+        if refresh:
+            self._update_table()
 
     def SetRowMutex(self, state, showError=True):
         '''
@@ -368,6 +386,16 @@ class ScrollingTable:
     def SetTableHeaderOrder(self, header_list=None):
         # for backwards compatibility
         return self.set_table_header_order(header_list)
+
+    @property
+    def headers(self):
+        all_headers = []
+        for row in self._data_rows:
+            for key in row:
+                if key not in all_headers:
+                    all_headers.append(key)
+        all_headers += self._table_header_order
+        return list(set(all_headers))
 
     def register_header_buttons(self, *args):
         '''
@@ -637,6 +665,8 @@ class ScrollingTable:
             max_offset = 0
         print('max_offset=', max_offset)
 
+        max_offset += self._numOfBufferRows
+
         self._current_row_offset += count
         if self._current_row_offset > max_offset:
             self._current_row_offset = max_offset
@@ -672,12 +702,12 @@ class ScrollingTable:
         if state is False:
             self._update_table()  # immediate update
 
+    def UpdateTable(self):
+        # redraw the table now
+        self._update_table()
+
     def _update_table(self):
         if self._initialized and not self._freeze:
-            print('631 ScrollingTable._update_table()')
-            print('self._current_row_offset=', self._current_row_offset)
-            print('self._rowMutexSelectedRow=', self._rowMutexSelectedRow)
-            print('self._rowMutex=', self._rowMutex)
 
             # iterate over all the cell objects
             for cell in self._cells:
@@ -1059,7 +1089,9 @@ class ScrollingTable:
         basically if there are 10 rows on your TLP, but you only have 5 rows of data, then you dont need to show scroll buttons, hide the controls assiciated with scrolling
         '''
         # up/down scroll controls
-        if len(self._data_rows) > self._max_height:
+        print('IsScrollable self._max_height=', self._max_height, ', self._numOfBufferRows=', self._numOfBufferRows)
+        if len(self._data_rows) > self._max_height - self._numOfBufferRows:
+            print('SetVisible(True) updown')
             if self._scroll_updown_level is not None:
                 self._scroll_updown_level.SetVisible(True)
 
@@ -1242,6 +1274,15 @@ class ScrollingTable:
             self._data_rows.insert(relativeIndex + 1, moveRow)
 
         self._update_table()
+
+    def SetBufferRows(self, num):
+        # use this to change where the table stops scrolling.
+        self._numOfBufferRows = num
+
+    def Hide(self):
+        # hide all the cells, will be shown again if the data changes
+        for cell in self._cells:
+            cell.SetVisible(False)
 
 
 def SortListDictByKey(aList, sortKey, reverse=False):
