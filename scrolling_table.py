@@ -1285,6 +1285,8 @@ class ScrollingTable:
             cell.SetVisible(False)
 
 
+
+
 def SortListDictByKey(aList, sortKey, reverse=False):
     '''
     aList = list of dicts
