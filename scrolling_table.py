@@ -995,10 +995,7 @@ class ScrollingTable:
         '''
         oldData = self._data_rows.copy()
 
-        try:
-            newData = func(oldData)
-        except:
-            newData = sorted(oldData, key=func)
+        newData = sorted(oldData, key=func)
 
         self._data_rows = newData
 
